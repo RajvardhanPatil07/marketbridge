@@ -1,9 +1,9 @@
 [project]
 name = "marketbridge-demo"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deterministic off-hours reference and source-quality demonstration"
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "yfinance>=0.2.66,<1"]
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "yfinance>=0.2.66,<1", "websockets>=17,<18"]
 
 [dependency-groups]
 dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.11,<1"]

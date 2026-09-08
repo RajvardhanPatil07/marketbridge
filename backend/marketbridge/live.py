@@ -8,7 +8,6 @@ from time import monotonic
 import warnings
 from zoneinfo import ZoneInfo
 
-import yfinance as yf
 
 
 SYMBOLS = {"NVDA": "NVIDIA", "TSLA": "Tesla", "QQQ": "Invesco QQQ"}
@@ -42,6 +41,8 @@ def _finite(value: object) -> float | None:
 
 
 def _fetch_symbol(symbol: str, now: datetime) -> dict:
+    import yfinance as yf
+
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Timestamp.utcnow is deprecated.*")
         ticker = yf.Ticker(symbol)

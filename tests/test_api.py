@@ -124,6 +124,13 @@ def test_response_security_and_health():
     assert response.headers["cache-control"] == "no-store"
 
 
+def test_static_dashboard_csp_allows_next_bootstrap_scripts():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "<script>" in response.text
+    assert "script-src 'self' 'unsafe-inline'" in response.headers["content-security-policy"]
+
+
 def test_shadow_snapshot_and_mochatrade_mark_adapter(monkeypatch):
     snapshot = client.get("/v1/shadow/snapshot")
     assert snapshot.status_code == 200

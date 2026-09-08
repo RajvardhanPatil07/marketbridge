@@ -1,5 +1,8 @@
-"""Read-only demo API and same-origin static dashboard host."""
+"""MarketBridge read-only API and same-origin dashboard host."""
 
+from __future__ import annotations
+
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -7,23 +10,35 @@ import json
 import os
 from pathlib import Path
 import secrets
-from time import monotonic, sleep
+import time
 
-from fastapi import FastAPI, Header, HTTPException, Query, Request
+from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .scenarios import list_scenarios, run_scenario
 from .evaluation import evaluate_all
 from .incidents import incident_reconstruction
 from .live import get_live_snapshot
+from .scenarios import list_scenarios, run_scenario
+from .security import NonceStore, SignatureHeaders, SlidingWindowLimiter, verify_signature
 from .shadow import LivePipeline, TRACKED_SYMBOLS
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = Path(os.environ.get("MARKETBRIDGE_WEB_DIR", str(ROOT / "apps" / "web" / "out"))).resolve()
 pipeline = LivePipeline(ROOT / "artifacts" / "shadow-decisions.jsonl")
+nonce_store = NonceStore(ttl_seconds=30)
+integration_limiter = SlidingWindowLimiter(limit=300, window_seconds=60)
+ws_limiter = SlidingWindowLimiter(limit=20, window_seconds=60)
+
+
+def _allowed_origins() -> list[str]:
+    configured = [item.strip() for item in os.environ.get("MARKETBRIDGE_ALLOWED_ORIGINS", "").split(",") if item.strip()]
+    return configured or ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+
+ALLOWED_ORIGINS = _allowed_origins()
 
 
 @asynccontextmanager
@@ -34,17 +49,21 @@ async def lifespan(_app: FastAPI):
     finally:
         pipeline.stop()
 
+
 app = FastAPI(
-    title="MarketBridge Demo API",
-    version="0.1.0",
-    description="Synthetic safety scenarios plus a read-only Yahoo Finance research feed. No execution or validated market forecasts.",
+    title="MarketBridge API",
+    version="0.2.0",
+    description="Advisory mark-integrity, fair-value and dynamic-risk layer for 24/7 equity perpetuals.",
     lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST"],
-    allow_headers=["Accept", "Content-Type", "X-MarketBridge-Key"],
+    allow_headers=[
+        "Accept", "Content-Type", "X-MarketBridge-Key", "X-MarketBridge-Timestamp",
+        "X-MarketBridge-Nonce", "X-MarketBridge-Signature",
+    ],
 )
 
 
@@ -52,9 +71,22 @@ app.add_middleware(
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # Next's static export includes inline bootstrap payloads. Keep API responses
+    # strict while allowing those generated scripts on HTML documents.
+    script_policy = (
+        "script-src 'self' 'unsafe-inline';"
+        if response.headers.get("content-type", "").startswith("text/html")
+        else "script-src 'self';"
+    )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        f"{script_policy} connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'"
+    )
+    if request.url.scheme == "https" or os.environ.get("MARKETBRIDGE_FORCE_HSTS") == "1":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     if request.url.path.startswith("/v1/"):
         response.headers["Cache-Control"] = "no-store"
     return response
@@ -64,9 +96,26 @@ async def security_headers(request: Request, call_next):
 def health():
     return {
         "status": "ok",
+        "version": "0.2.0",
         "data_modes": ["SYNTHETIC_TEST", "HISTORICAL_RECONSTRUCTION", "LIVE_RESEARCH", "SHADOW_ORACLE"],
         "web_ready": (WEB / "index.html").exists(),
     }
+
+
+@app.get("/health/live")
+def health_live():
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+def health_ready():
+    return {"status": "ready", "pipeline_started": pipeline.snapshot()["started"]}
+
+
+@app.get("/health/feeds")
+def health_feeds():
+    snap = pipeline.snapshot()
+    return {"providers": snap["providers"], "generation": snap["generation"]}
 
 
 @app.get("/v1/demo/scenarios")
@@ -125,51 +174,120 @@ def refresh_shadow_yahoo():
 
 @app.get("/v1/shadow/stream")
 def shadow_stream():
+    """Event-driven SSE fallback. No fixed 100 ms polling loop."""
     def events():
         generation = -1
-        heartbeat = monotonic()
-        deadline = monotonic() + 30
-        while monotonic() < deadline:
-            snapshot = pipeline.snapshot()
+        while True:
+            snapshot = pipeline.wait_for_generation(generation, timeout=10)
             if snapshot["generation"] != generation:
                 generation = snapshot["generation"]
                 yield f"data:{json.dumps(snapshot, allow_nan=False, separators=(',', ':'))}\n\n"
-            elif monotonic() - heartbeat >= 10:
-                heartbeat = monotonic()
+            else:
                 yield ":keepalive\n\n"
-            sleep(0.1)
 
     return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
 
 
+@app.websocket("/v1/shadow/ws")
+async def shadow_websocket(websocket: WebSocket):
+    origin = websocket.headers.get("origin")
+    if origin and origin not in ALLOWED_ORIGINS:
+        await websocket.close(code=1008, reason="Origin not allowed")
+        return
+    host = websocket.client.host if websocket.client else "unknown"
+    if not ws_limiter.allow(host):
+        await websocket.close(code=1013, reason="Too many connection attempts")
+        return
+    await websocket.accept()
+    generation = -1
+    try:
+        while True:
+            snapshot = await asyncio.to_thread(pipeline.wait_for_generation, generation, 10.0)
+            if snapshot["generation"] != generation:
+                generation = snapshot["generation"]
+                await websocket.send_json({"type": "shadow_snapshot", "data": snapshot})
+            else:
+                await websocket.send_json({"type": "heartbeat", "generation": generation})
+    except WebSocketDisconnect:
+        return
+
+
 class MochatradeMarketEvent(BaseModel):
-    symbol: str = Field(pattern="^(NVDA|TSLA|QQQ)$")
-    mark_price: float = Field(gt=0)
+    symbol: str = Field(pattern="^(NVDA|TSLA|AAPL|MSFT|AMD|QQQ)$")
+    mark_price: float = Field(gt=0, lt=1_000_000)
     event_time: datetime
 
 
+def _client_key(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
+async def _authenticate_integration(
+    request: Request,
+    x_marketbridge_key: str | None,
+    x_marketbridge_timestamp: str | None,
+    x_marketbridge_nonce: str | None,
+    x_marketbridge_signature: str | None,
+) -> None:
+    client = _client_key(request)
+    if not integration_limiter.allow(client):
+        raise HTTPException(status_code=429, detail="Integration rate limit exceeded")
+
+    hmac_secret = os.environ.get("MOCHATRADE_HMAC_SECRET")
+    legacy_key = os.environ.get("MOCHATRADE_INGEST_KEY")
+    if hmac_secret:
+        if not all([x_marketbridge_timestamp, x_marketbridge_nonce, x_marketbridge_signature]):
+            raise HTTPException(status_code=401, detail="Missing signed-request headers")
+        try:
+            signed_at = float(x_marketbridge_timestamp)
+        except ValueError as exc:
+            raise HTTPException(status_code=401, detail="Invalid signed-request timestamp") from exc
+        if abs(time.time() - signed_at) > 10:
+            raise HTTPException(status_code=401, detail="Signed request expired")
+        body = await request.body()
+        headers = SignatureHeaders(x_marketbridge_timestamp, x_marketbridge_nonce, x_marketbridge_signature)
+        if not verify_signature(hmac_secret, headers, body):
+            raise HTTPException(status_code=401, detail="Invalid request signature")
+        if not nonce_store.use_once(x_marketbridge_nonce):
+            raise HTTPException(status_code=409, detail="Replay detected")
+        return
+
+    if legacy_key:
+        if not x_marketbridge_key or not secrets.compare_digest(x_marketbridge_key, legacy_key):
+            raise HTTPException(status_code=401, detail="Invalid integration key")
+        return
+
+    if client not in {"127.0.0.1", "::1", "testclient"}:
+        raise HTTPException(status_code=403, detail="Configure MOCHATRADE_HMAC_SECRET for remote ingestion")
+
+
 @app.post("/v1/integrations/mochatrade/market")
-def ingest_mochatrade_mark(
+async def ingest_mochatrade_mark(
     event: MochatradeMarketEvent,
     request: Request,
     x_marketbridge_key: str | None = Header(default=None),
+    x_marketbridge_timestamp: str | None = Header(default=None),
+    x_marketbridge_nonce: str | None = Header(default=None),
+    x_marketbridge_signature: str | None = Header(default=None),
 ):
-    expected = os.environ.get("MOCHATRADE_INGEST_KEY")
-    if expected and (not x_marketbridge_key or not secrets.compare_digest(x_marketbridge_key, expected)):
-        raise HTTPException(status_code=401, detail="Invalid integration key")
-    client_host = request.client.host if request.client else None
-    if not expected and client_host not in {"127.0.0.1", "::1", "testclient"}:
-        raise HTTPException(status_code=403, detail="Set MOCHATRADE_INGEST_KEY for remote ingestion")
+    await _authenticate_integration(
+        request, x_marketbridge_key, x_marketbridge_timestamp, x_marketbridge_nonce, x_marketbridge_signature
+    )
     if event.event_time.tzinfo is None:
         raise HTTPException(status_code=422, detail="event_time must include a timezone")
-    if event.event_time.astimezone(timezone.utc) > datetime.now(timezone.utc) + timedelta(seconds=5):
+    utc_event = event.event_time.astimezone(timezone.utc)
+    now = datetime.now(timezone.utc)
+    if utc_event > now + timedelta(seconds=5):
         raise HTTPException(status_code=422, detail="event_time cannot be in the future")
+    if utc_event < now - timedelta(minutes=5):
+        raise HTTPException(status_code=422, detail="event_time is too old")
     if event.symbol not in TRACKED_SYMBOLS:
         raise HTTPException(status_code=404, detail="Unknown symbol")
     return {
         "accepted": True,
         "advisory_only": True,
         "mark": pipeline.ingest_mochatrade(event.symbol, event.mark_price, event.event_time),
+        "decision": next((item for item in pipeline.snapshot()["decisions"] if item["symbol"] == event.symbol), None),
     }
 
 
