@@ -1,0 +1,16 @@
+.venv
+**/node_modules
+**/.next
+**/__pycache__
+.pytest_cache
+.ruff_cache
+artifacts
+.env*
+*.md
+docs
+tests
+.github
+.DS_Store
+public
+apps/web/out
+

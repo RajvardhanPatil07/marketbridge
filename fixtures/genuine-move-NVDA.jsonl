@@ -1,0 +1,266 @@
+{"data_mode": "SYNTHETIC_TEST", "duration_seconds": 60, "generator_version": "1", "kind": "metadata", "scenario_id": "genuine-move", "symbol": "NVDA"}
+{"ask": 480.048, "bid": 479.952, "event_time": 0, "id": "genuine-move:NVDA:qqq:0", "ingestion_sequence": 1, "kind": "observation", "price": 480.0, "received_at": 0, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 0, "id": "genuine-move:NVDA:iex:0", "ingestion_sequence": 2, "kind": "observation", "price": 182.5, "received_at": 0, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 0, "id": "genuine-move:NVDA:independent:0", "ingestion_sequence": 3, "kind": "observation", "price": 182.5, "received_at": 0, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:0", "ingestion_sequence": 4, "kind": "timer", "received_at": 0}
+{"ingestion_sequence": 5, "kind": "truth", "price": 182.5, "received_at": 0}
+{"ask": 480.048, "bid": 479.952, "event_time": 1, "id": "genuine-move:NVDA:qqq:1", "ingestion_sequence": 6, "kind": "observation", "price": 480.0, "received_at": 1, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 1, "id": "genuine-move:NVDA:iex:1", "ingestion_sequence": 7, "kind": "observation", "price": 182.5, "received_at": 1, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:1", "ingestion_sequence": 8, "kind": "timer", "received_at": 1}
+{"ingestion_sequence": 9, "kind": "truth", "price": 182.5, "received_at": 1}
+{"ask": 480.048, "bid": 479.952, "event_time": 2, "id": "genuine-move:NVDA:qqq:2", "ingestion_sequence": 10, "kind": "observation", "price": 480.0, "received_at": 2, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 2, "id": "genuine-move:NVDA:iex:2", "ingestion_sequence": 11, "kind": "observation", "price": 182.5, "received_at": 2, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:2", "ingestion_sequence": 12, "kind": "timer", "received_at": 2}
+{"ingestion_sequence": 13, "kind": "truth", "price": 182.5, "received_at": 2}
+{"ask": 480.048, "bid": 479.952, "event_time": 3, "id": "genuine-move:NVDA:qqq:3", "ingestion_sequence": 14, "kind": "observation", "price": 480.0, "received_at": 3, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 3, "id": "genuine-move:NVDA:iex:3", "ingestion_sequence": 15, "kind": "observation", "price": 182.5, "received_at": 3, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.51876514, "bid": 182.48226504, "event_time": 3, "id": "genuine-move:NVDA:independent:3", "ingestion_sequence": 16, "kind": "observation", "price": 182.50051509, "received_at": 3, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:3", "ingestion_sequence": 17, "kind": "timer", "received_at": 3}
+{"ingestion_sequence": 18, "kind": "truth", "price": 182.5, "received_at": 3}
+{"ask": 480.048, "bid": 479.952, "event_time": 4, "id": "genuine-move:NVDA:qqq:4", "ingestion_sequence": 19, "kind": "observation", "price": 480.0, "received_at": 4, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 4, "id": "genuine-move:NVDA:iex:4", "ingestion_sequence": 20, "kind": "observation", "price": 182.5, "received_at": 4, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:4", "ingestion_sequence": 21, "kind": "timer", "received_at": 4}
+{"ingestion_sequence": 22, "kind": "truth", "price": 182.5, "received_at": 4}
+{"ask": 480.048, "bid": 479.952, "event_time": 5, "id": "genuine-move:NVDA:qqq:5", "ingestion_sequence": 23, "kind": "observation", "price": 480.0, "received_at": 5, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 5, "id": "genuine-move:NVDA:iex:5", "ingestion_sequence": 24, "kind": "observation", "price": 182.5, "received_at": 5, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:5", "ingestion_sequence": 25, "kind": "timer", "received_at": 5}
+{"ingestion_sequence": 26, "kind": "truth", "price": 182.5, "received_at": 5}
+{"ask": 480.048, "bid": 479.952, "event_time": 6, "id": "genuine-move:NVDA:qqq:6", "ingestion_sequence": 27, "kind": "observation", "price": 480.0, "received_at": 6, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 6, "id": "genuine-move:NVDA:iex:6", "ingestion_sequence": 28, "kind": "observation", "price": 182.5, "received_at": 6, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.51723003, "bid": 182.48073024, "event_time": 6, "id": "genuine-move:NVDA:independent:6", "ingestion_sequence": 29, "kind": "observation", "price": 182.49898013, "received_at": 6, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:6", "ingestion_sequence": 30, "kind": "timer", "received_at": 6}
+{"ingestion_sequence": 31, "kind": "truth", "price": 182.5, "received_at": 6}
+{"ask": 480.048, "bid": 479.952, "event_time": 7, "id": "genuine-move:NVDA:qqq:7", "ingestion_sequence": 32, "kind": "observation", "price": 480.0, "received_at": 7, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 7, "id": "genuine-move:NVDA:iex:7", "ingestion_sequence": 33, "kind": "observation", "price": 182.5, "received_at": 7, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:7", "ingestion_sequence": 34, "kind": "timer", "received_at": 7}
+{"ingestion_sequence": 35, "kind": "truth", "price": 182.5, "received_at": 7}
+{"ask": 480.048, "bid": 479.952, "event_time": 8, "id": "genuine-move:NVDA:qqq:8", "ingestion_sequence": 36, "kind": "observation", "price": 480.0, "received_at": 8, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 8, "id": "genuine-move:NVDA:iex:8", "ingestion_sequence": 37, "kind": "observation", "price": 182.5, "received_at": 8, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:8", "ingestion_sequence": 38, "kind": "timer", "received_at": 8}
+{"ingestion_sequence": 39, "kind": "truth", "price": 182.5, "received_at": 8}
+{"ask": 480.048, "bid": 479.952, "event_time": 9, "id": "genuine-move:NVDA:qqq:9", "ingestion_sequence": 40, "kind": "observation", "price": 480.0, "received_at": 9, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 9, "id": "genuine-move:NVDA:iex:9", "ingestion_sequence": 41, "kind": "observation", "price": 182.5, "received_at": 9, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.51975438, "bid": 182.48325408, "event_time": 9, "id": "genuine-move:NVDA:independent:9", "ingestion_sequence": 42, "kind": "observation", "price": 182.50150423, "received_at": 9, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:9", "ingestion_sequence": 43, "kind": "timer", "received_at": 9}
+{"ingestion_sequence": 44, "kind": "truth", "price": 182.5, "received_at": 9}
+{"ask": 480.048, "bid": 479.952, "event_time": 10, "id": "genuine-move:NVDA:qqq:10", "ingestion_sequence": 45, "kind": "observation", "price": 480.0, "received_at": 10, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 10, "id": "genuine-move:NVDA:iex:10", "ingestion_sequence": 46, "kind": "observation", "price": 182.5, "received_at": 10, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:10", "ingestion_sequence": 47, "kind": "timer", "received_at": 10}
+{"ingestion_sequence": 48, "kind": "truth", "price": 182.5, "received_at": 10}
+{"ask": 480.048, "bid": 479.952, "event_time": 11, "id": "genuine-move:NVDA:qqq:11", "ingestion_sequence": 49, "kind": "observation", "price": 480.0, "received_at": 11, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 11, "id": "genuine-move:NVDA:iex:11", "ingestion_sequence": 50, "kind": "observation", "price": 182.5, "received_at": 11, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:11", "ingestion_sequence": 51, "kind": "timer", "received_at": 11}
+{"ingestion_sequence": 52, "kind": "truth", "price": 182.5, "received_at": 11}
+{"ask": 480.048, "bid": 479.952, "event_time": 12, "id": "genuine-move:NVDA:qqq:12", "ingestion_sequence": 53, "kind": "observation", "price": 480.0, "received_at": 12, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 12, "id": "genuine-move:NVDA:iex:12", "ingestion_sequence": 54, "kind": "observation", "price": 182.5, "received_at": 12, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.51629131, "bid": 182.4797917, "event_time": 12, "id": "genuine-move:NVDA:independent:12", "ingestion_sequence": 55, "kind": "observation", "price": 182.49804151, "received_at": 12, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:12", "ingestion_sequence": 56, "kind": "timer", "received_at": 12}
+{"ingestion_sequence": 57, "kind": "truth", "price": 182.5, "received_at": 12}
+{"ask": 480.048, "bid": 479.952, "event_time": 13, "id": "genuine-move:NVDA:qqq:13", "ingestion_sequence": 58, "kind": "observation", "price": 480.0, "received_at": 13, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 13, "id": "genuine-move:NVDA:iex:13", "ingestion_sequence": 59, "kind": "observation", "price": 182.5, "received_at": 13, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:13", "ingestion_sequence": 60, "kind": "timer", "received_at": 13}
+{"ingestion_sequence": 61, "kind": "truth", "price": 182.5, "received_at": 13}
+{"ask": 480.048, "bid": 479.952, "event_time": 14, "id": "genuine-move:NVDA:qqq:14", "ingestion_sequence": 62, "kind": "observation", "price": 480.0, "received_at": 14, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 14, "id": "genuine-move:NVDA:iex:14", "ingestion_sequence": 63, "kind": "observation", "price": 182.5, "received_at": 14, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:14", "ingestion_sequence": 64, "kind": "timer", "received_at": 14}
+{"ingestion_sequence": 65, "kind": "truth", "price": 182.5, "received_at": 14}
+{"ask": 480.048, "bid": 479.952, "event_time": 15, "id": "genuine-move:NVDA:qqq:15", "ingestion_sequence": 66, "kind": "observation", "price": 480.0, "received_at": 15, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 15, "id": "genuine-move:NVDA:iex:15", "ingestion_sequence": 67, "kind": "observation", "price": 182.5, "received_at": 15, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.52062379, "bid": 182.48412331, "event_time": 15, "id": "genuine-move:NVDA:independent:15", "ingestion_sequence": 68, "kind": "observation", "price": 182.50237355, "received_at": 15, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:15", "ingestion_sequence": 69, "kind": "timer", "received_at": 15}
+{"ingestion_sequence": 70, "kind": "truth", "price": 182.5, "received_at": 15}
+{"ask": 480.048, "bid": 479.952, "event_time": 16, "id": "genuine-move:NVDA:qqq:16", "ingestion_sequence": 71, "kind": "observation", "price": 480.0, "received_at": 16, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 16, "id": "genuine-move:NVDA:iex:16", "ingestion_sequence": 72, "kind": "observation", "price": 182.5, "received_at": 16, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:16", "ingestion_sequence": 73, "kind": "timer", "received_at": 16}
+{"ingestion_sequence": 74, "kind": "truth", "price": 182.5, "received_at": 16}
+{"ask": 480.048, "bid": 479.952, "event_time": 17, "id": "genuine-move:NVDA:qqq:17", "ingestion_sequence": 75, "kind": "observation", "price": 480.0, "received_at": 17, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 17, "id": "genuine-move:NVDA:iex:17", "ingestion_sequence": 76, "kind": "observation", "price": 182.5, "received_at": 17, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:17", "ingestion_sequence": 77, "kind": "timer", "received_at": 17}
+{"ingestion_sequence": 78, "kind": "truth", "price": 182.5, "received_at": 17}
+{"ask": 480.048, "bid": 479.952, "event_time": 18, "id": "genuine-move:NVDA:qqq:18", "ingestion_sequence": 79, "kind": "observation", "price": 480.0, "received_at": 18, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 18, "id": "genuine-move:NVDA:iex:18", "ingestion_sequence": 80, "kind": "observation", "price": 182.5, "received_at": 18, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.51550862, "bid": 182.47900917, "event_time": 18, "id": "genuine-move:NVDA:independent:18", "ingestion_sequence": 81, "kind": "observation", "price": 182.4972589, "received_at": 18, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:18", "ingestion_sequence": 82, "kind": "timer", "received_at": 18}
+{"ingestion_sequence": 83, "kind": "truth", "price": 182.5, "received_at": 18}
+{"ask": 480.048, "bid": 479.952, "event_time": 19, "id": "genuine-move:NVDA:qqq:19", "ingestion_sequence": 84, "kind": "observation", "price": 480.0, "received_at": 19, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 19, "id": "genuine-move:NVDA:iex:19", "ingestion_sequence": 85, "kind": "observation", "price": 182.5, "received_at": 19, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:19", "ingestion_sequence": 86, "kind": "timer", "received_at": 19}
+{"ingestion_sequence": 87, "kind": "truth", "price": 182.5, "received_at": 19}
+{"ask": 480.048, "bid": 479.952, "event_time": 20, "id": "genuine-move:NVDA:qqq:20", "ingestion_sequence": 88, "kind": "observation", "price": 480.0, "received_at": 20, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 20, "id": "genuine-move:NVDA:iex:20", "ingestion_sequence": 89, "kind": "observation", "price": 182.5, "received_at": 20, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:20", "ingestion_sequence": 90, "kind": "timer", "received_at": 20}
+{"ingestion_sequence": 91, "kind": "truth", "price": 182.5, "received_at": 20}
+{"ask": 480.048, "bid": 479.952, "event_time": 21, "id": "genuine-move:NVDA:qqq:21", "ingestion_sequence": 92, "kind": "observation", "price": 480.0, "received_at": 21, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 21, "id": "genuine-move:NVDA:iex:21", "ingestion_sequence": 93, "kind": "observation", "price": 182.5, "received_at": 21, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 182.5213041, "bid": 182.48480349, "event_time": 21, "id": "genuine-move:NVDA:independent:21", "ingestion_sequence": 94, "kind": "observation", "price": 182.50305379, "received_at": 21, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:21", "ingestion_sequence": 95, "kind": "timer", "received_at": 21}
+{"ingestion_sequence": 96, "kind": "truth", "price": 182.5, "received_at": 21}
+{"ask": 480.048, "bid": 479.952, "event_time": 22, "id": "genuine-move:NVDA:qqq:22", "ingestion_sequence": 97, "kind": "observation", "price": 480.0, "received_at": 22, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 22, "id": "genuine-move:NVDA:iex:22", "ingestion_sequence": 98, "kind": "observation", "price": 182.5, "received_at": 22, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:22", "ingestion_sequence": 99, "kind": "timer", "received_at": 22}
+{"ingestion_sequence": 100, "kind": "truth", "price": 182.5, "received_at": 22}
+{"ask": 480.048, "bid": 479.952, "event_time": 23, "id": "genuine-move:NVDA:qqq:23", "ingestion_sequence": 101, "kind": "observation", "price": 480.0, "received_at": 23, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 182.51825, "bid": 182.48175, "event_time": 23, "id": "genuine-move:NVDA:iex:23", "ingestion_sequence": 102, "kind": "observation", "price": 182.5, "received_at": 23, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:23", "ingestion_sequence": 103, "kind": "timer", "received_at": 23}
+{"ingestion_sequence": 104, "kind": "truth", "price": 182.5, "received_at": 23}
+{"ask": 480.048, "bid": 479.952, "event_time": 24, "id": "genuine-move:NVDA:qqq:24", "ingestion_sequence": 105, "kind": "observation", "price": 480.0, "received_at": 24, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.664965, "bid": 149.635035, "event_time": 24, "id": "genuine-move:NVDA:iex:24", "ingestion_sequence": 106, "kind": "observation", "price": 149.65, "received_at": 24, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:24", "ingestion_sequence": 107, "kind": "timer", "received_at": 24}
+{"ingestion_sequence": 108, "kind": "truth", "price": 149.65, "received_at": 24}
+{"ask": 480.048, "bid": 479.952, "event_time": 25, "id": "genuine-move:NVDA:qqq:25", "ingestion_sequence": 109, "kind": "observation", "price": 480.0, "received_at": 25, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6679583, "bid": 149.6380277, "event_time": 25, "id": "genuine-move:NVDA:iex:25", "ingestion_sequence": 110, "kind": "observation", "price": 149.652993, "received_at": 25, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:25", "ingestion_sequence": 111, "kind": "timer", "received_at": 25}
+{"ingestion_sequence": 112, "kind": "truth", "price": 149.652993, "received_at": 25}
+{"ask": 480.048, "bid": 479.952, "event_time": 26, "id": "genuine-move:NVDA:qqq:26", "ingestion_sequence": 113, "kind": "observation", "price": 480.0, "received_at": 26, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6709516, "bid": 149.6410204, "event_time": 26, "id": "genuine-move:NVDA:iex:26", "ingestion_sequence": 114, "kind": "observation", "price": 149.655986, "received_at": 26, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:26", "ingestion_sequence": 115, "kind": "timer", "received_at": 26}
+{"ingestion_sequence": 116, "kind": "truth", "price": 149.655986, "received_at": 26}
+{"ask": 480.048, "bid": 479.952, "event_time": 27, "id": "genuine-move:NVDA:qqq:27", "ingestion_sequence": 117, "kind": "observation", "price": 480.0, "received_at": 27, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6739449, "bid": 149.6440131, "event_time": 27, "id": "genuine-move:NVDA:iex:27", "ingestion_sequence": 118, "kind": "observation", "price": 149.658979, "received_at": 27, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.67680779, "bid": 149.64687542, "event_time": 27, "id": "genuine-move:NVDA:independent:27", "ingestion_sequence": 119, "kind": "observation", "price": 149.6618416, "received_at": 27, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:27", "ingestion_sequence": 120, "kind": "timer", "received_at": 27}
+{"ingestion_sequence": 121, "kind": "truth", "price": 149.658979, "received_at": 27}
+{"ask": 480.048, "bid": 479.952, "event_time": 28, "id": "genuine-move:NVDA:qqq:28", "ingestion_sequence": 122, "kind": "observation", "price": 480.0, "received_at": 28, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6769382, "bid": 149.6470058, "event_time": 28, "id": "genuine-move:NVDA:iex:28", "ingestion_sequence": 123, "kind": "observation", "price": 149.661972, "received_at": 28, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:28", "ingestion_sequence": 124, "kind": "timer", "received_at": 28}
+{"ingestion_sequence": 125, "kind": "truth", "price": 149.661972, "received_at": 28}
+{"ask": 480.048, "bid": 479.952, "event_time": 29, "id": "genuine-move:NVDA:qqq:29", "ingestion_sequence": 126, "kind": "observation", "price": 480.0, "received_at": 29, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6799315, "bid": 149.6499985, "event_time": 29, "id": "genuine-move:NVDA:iex:29", "ingestion_sequence": 127, "kind": "observation", "price": 149.664965, "received_at": 29, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:29", "ingestion_sequence": 128, "kind": "timer", "received_at": 29}
+{"ingestion_sequence": 129, "kind": "truth", "price": 149.664965, "received_at": 29}
+{"ask": 480.048, "bid": 479.952, "event_time": 30, "id": "genuine-move:NVDA:qqq:30", "ingestion_sequence": 130, "kind": "observation", "price": 480.0, "received_at": 30, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6829248, "bid": 149.6529912, "event_time": 30, "id": "genuine-move:NVDA:iex:30", "ingestion_sequence": 131, "kind": "observation", "price": 149.667958, "received_at": 30, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.67996697, "bid": 149.65003397, "event_time": 30, "id": "genuine-move:NVDA:independent:30", "ingestion_sequence": 132, "kind": "observation", "price": 149.66500047, "received_at": 30, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:30", "ingestion_sequence": 133, "kind": "timer", "received_at": 30}
+{"ingestion_sequence": 134, "kind": "truth", "price": 149.667958, "received_at": 30}
+{"ask": 480.048, "bid": 479.952, "event_time": 31, "id": "genuine-move:NVDA:qqq:31", "ingestion_sequence": 135, "kind": "observation", "price": 480.0, "received_at": 31, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.6859181, "bid": 149.6559839, "event_time": 31, "id": "genuine-move:NVDA:iex:31", "ingestion_sequence": 136, "kind": "observation", "price": 149.670951, "received_at": 31, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:31", "ingestion_sequence": 137, "kind": "timer", "received_at": 31}
+{"ingestion_sequence": 138, "kind": "truth", "price": 149.670951, "received_at": 31}
+{"ask": 480.048, "bid": 479.952, "event_time": 32, "id": "genuine-move:NVDA:qqq:32", "ingestion_sequence": 139, "kind": "observation", "price": 480.0, "received_at": 32, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.68891139, "bid": 149.65897661, "event_time": 32, "id": "genuine-move:NVDA:iex:32", "ingestion_sequence": 140, "kind": "observation", "price": 149.673944, "received_at": 32, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:32", "ingestion_sequence": 141, "kind": "timer", "received_at": 32}
+{"ingestion_sequence": 142, "kind": "truth", "price": 149.673944, "received_at": 32}
+{"ask": 480.048, "bid": 479.952, "event_time": 33, "id": "genuine-move:NVDA:qqq:33", "ingestion_sequence": 143, "kind": "observation", "price": 480.0, "received_at": 33, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.69190469, "bid": 149.66196931, "event_time": 33, "id": "genuine-move:NVDA:iex:33", "ingestion_sequence": 144, "kind": "observation", "price": 149.676937, "received_at": 33, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.69489827, "bid": 149.66496228, "event_time": 33, "id": "genuine-move:NVDA:independent:33", "ingestion_sequence": 145, "kind": "observation", "price": 149.67993027, "received_at": 33, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:33", "ingestion_sequence": 146, "kind": "timer", "received_at": 33}
+{"ingestion_sequence": 147, "kind": "truth", "price": 149.676937, "received_at": 33}
+{"ask": 480.048, "bid": 479.952, "event_time": 34, "id": "genuine-move:NVDA:qqq:34", "ingestion_sequence": 148, "kind": "observation", "price": 480.0, "received_at": 34, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.69489799, "bid": 149.66496201, "event_time": 34, "id": "genuine-move:NVDA:iex:34", "ingestion_sequence": 149, "kind": "observation", "price": 149.67993, "received_at": 34, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:34", "ingestion_sequence": 150, "kind": "timer", "received_at": 34}
+{"ingestion_sequence": 151, "kind": "truth", "price": 149.67993, "received_at": 34}
+{"ask": 480.048, "bid": 479.952, "event_time": 35, "id": "genuine-move:NVDA:qqq:35", "ingestion_sequence": 152, "kind": "observation", "price": 480.0, "received_at": 35, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.69789129, "bid": 149.66795471, "event_time": 35, "id": "genuine-move:NVDA:iex:35", "ingestion_sequence": 153, "kind": "observation", "price": 149.682923, "received_at": 35, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:35", "ingestion_sequence": 154, "kind": "timer", "received_at": 35}
+{"ingestion_sequence": 155, "kind": "truth", "price": 149.682923, "received_at": 35}
+{"ask": 480.048, "bid": 479.952, "event_time": 36, "id": "genuine-move:NVDA:qqq:36", "ingestion_sequence": 156, "kind": "observation", "price": 480.0, "received_at": 36, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.70088459, "bid": 149.67094741, "event_time": 36, "id": "genuine-move:NVDA:iex:36", "ingestion_sequence": 157, "kind": "observation", "price": 149.685916, "received_at": 36, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.69791519, "bid": 149.6679786, "event_time": 36, "id": "genuine-move:NVDA:independent:36", "ingestion_sequence": 158, "kind": "observation", "price": 149.68294689, "received_at": 36, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:36", "ingestion_sequence": 159, "kind": "timer", "received_at": 36}
+{"ingestion_sequence": 160, "kind": "truth", "price": 149.685916, "received_at": 36}
+{"ask": 480.048, "bid": 479.952, "event_time": 37, "id": "genuine-move:NVDA:qqq:37", "ingestion_sequence": 161, "kind": "observation", "price": 480.0, "received_at": 37, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.70387789, "bid": 149.67394011, "event_time": 37, "id": "genuine-move:NVDA:iex:37", "ingestion_sequence": 162, "kind": "observation", "price": 149.688909, "received_at": 37, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:37", "ingestion_sequence": 163, "kind": "timer", "received_at": 37}
+{"ingestion_sequence": 164, "kind": "truth", "price": 149.688909, "received_at": 37}
+{"ask": 480.048, "bid": 479.952, "event_time": 38, "id": "genuine-move:NVDA:qqq:38", "ingestion_sequence": 165, "kind": "observation", "price": 480.0, "received_at": 38, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.70687119, "bid": 149.67693281, "event_time": 38, "id": "genuine-move:NVDA:iex:38", "ingestion_sequence": 166, "kind": "observation", "price": 149.691902, "received_at": 38, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:38", "ingestion_sequence": 167, "kind": "timer", "received_at": 38}
+{"ingestion_sequence": 168, "kind": "truth", "price": 149.691902, "received_at": 38}
+{"ask": 480.048, "bid": 479.952, "event_time": 39, "id": "genuine-move:NVDA:qqq:39", "ingestion_sequence": 169, "kind": "observation", "price": 480.0, "received_at": 39, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.70986449, "bid": 149.67992551, "event_time": 39, "id": "genuine-move:NVDA:iex:39", "ingestion_sequence": 170, "kind": "observation", "price": 149.694895, "received_at": 39, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.71275028, "bid": 149.68281073, "event_time": 39, "id": "genuine-move:NVDA:independent:39", "ingestion_sequence": 171, "kind": "observation", "price": 149.6977805, "received_at": 39, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:39", "ingestion_sequence": 172, "kind": "timer", "received_at": 39}
+{"ingestion_sequence": 173, "kind": "truth", "price": 149.694895, "received_at": 39}
+{"ask": 480.048, "bid": 479.952, "event_time": 40, "id": "genuine-move:NVDA:qqq:40", "ingestion_sequence": 174, "kind": "observation", "price": 480.0, "received_at": 40, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.71285779, "bid": 149.68291821, "event_time": 40, "id": "genuine-move:NVDA:iex:40", "ingestion_sequence": 175, "kind": "observation", "price": 149.697888, "received_at": 40, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:40", "ingestion_sequence": 176, "kind": "timer", "received_at": 40}
+{"ingestion_sequence": 177, "kind": "truth", "price": 149.697888, "received_at": 40}
+{"ask": 480.048, "bid": 479.952, "event_time": 41, "id": "genuine-move:NVDA:qqq:41", "ingestion_sequence": 178, "kind": "observation", "price": 480.0, "received_at": 41, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.71585109, "bid": 149.68591091, "event_time": 41, "id": "genuine-move:NVDA:iex:41", "ingestion_sequence": 179, "kind": "observation", "price": 149.700881, "received_at": 41, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:41", "ingestion_sequence": 180, "kind": "timer", "received_at": 41}
+{"ingestion_sequence": 181, "kind": "truth", "price": 149.700881, "received_at": 41}
+{"ask": 480.048, "bid": 479.952, "event_time": 42, "id": "genuine-move:NVDA:qqq:42", "ingestion_sequence": 182, "kind": "observation", "price": 480.0, "received_at": 42, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.71884439, "bid": 149.68890361, "event_time": 42, "id": "genuine-move:NVDA:iex:42", "ingestion_sequence": 183, "kind": "observation", "price": 149.703874, "received_at": 42, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.71609998, "bid": 149.68615975, "event_time": 42, "id": "genuine-move:NVDA:independent:42", "ingestion_sequence": 184, "kind": "observation", "price": 149.70112986, "received_at": 42, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:42", "ingestion_sequence": 185, "kind": "timer", "received_at": 42}
+{"ingestion_sequence": 186, "kind": "truth", "price": 149.703874, "received_at": 42}
+{"ask": 480.048, "bid": 479.952, "event_time": 43, "id": "genuine-move:NVDA:qqq:43", "ingestion_sequence": 187, "kind": "observation", "price": 480.0, "received_at": 43, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.72183769, "bid": 149.69189631, "event_time": 43, "id": "genuine-move:NVDA:iex:43", "ingestion_sequence": 188, "kind": "observation", "price": 149.706867, "received_at": 43, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:43", "ingestion_sequence": 189, "kind": "timer", "received_at": 43}
+{"ingestion_sequence": 190, "kind": "truth", "price": 149.706867, "received_at": 43}
+{"ask": 480.048, "bid": 479.952, "event_time": 44, "id": "genuine-move:NVDA:qqq:44", "ingestion_sequence": 191, "kind": "observation", "price": 480.0, "received_at": 44, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.72483099, "bid": 149.69488901, "event_time": 44, "id": "genuine-move:NVDA:iex:44", "ingestion_sequence": 192, "kind": "observation", "price": 149.70986, "received_at": 44, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:44", "ingestion_sequence": 193, "kind": "timer", "received_at": 44}
+{"ingestion_sequence": 194, "kind": "truth", "price": 149.70986, "received_at": 44}
+{"ask": 480.048, "bid": 479.952, "event_time": 45, "id": "genuine-move:NVDA:qqq:45", "ingestion_sequence": 195, "kind": "observation", "price": 480.0, "received_at": 45, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.72782429, "bid": 149.69788171, "event_time": 45, "id": "genuine-move:NVDA:iex:45", "ingestion_sequence": 196, "kind": "observation", "price": 149.712853, "received_at": 45, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.73037236, "bid": 149.70042928, "event_time": 45, "id": "genuine-move:NVDA:independent:45", "ingestion_sequence": 197, "kind": "observation", "price": 149.71540082, "received_at": 45, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:45", "ingestion_sequence": 198, "kind": "timer", "received_at": 45}
+{"ingestion_sequence": 199, "kind": "truth", "price": 149.712853, "received_at": 45}
+{"ask": 480.048, "bid": 479.952, "event_time": 46, "id": "genuine-move:NVDA:qqq:46", "ingestion_sequence": 200, "kind": "observation", "price": 480.0, "received_at": 46, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.73081758, "bid": 149.70087442, "event_time": 46, "id": "genuine-move:NVDA:iex:46", "ingestion_sequence": 201, "kind": "observation", "price": 149.715846, "received_at": 46, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:46", "ingestion_sequence": 202, "kind": "timer", "received_at": 46}
+{"ingestion_sequence": 203, "kind": "truth", "price": 149.715846, "received_at": 46}
+{"ask": 480.048, "bid": 479.952, "event_time": 47, "id": "genuine-move:NVDA:qqq:47", "ingestion_sequence": 204, "kind": "observation", "price": 480.0, "received_at": 47, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.73381088, "bid": 149.70386712, "event_time": 47, "id": "genuine-move:NVDA:iex:47", "ingestion_sequence": 205, "kind": "observation", "price": 149.718839, "received_at": 47, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:47", "ingestion_sequence": 206, "kind": "timer", "received_at": 47}
+{"ingestion_sequence": 207, "kind": "truth", "price": 149.718839, "received_at": 47}
+{"ask": 480.048, "bid": 479.952, "event_time": 48, "id": "genuine-move:NVDA:qqq:48", "ingestion_sequence": 208, "kind": "observation", "price": 480.0, "received_at": 48, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.73680418, "bid": 149.70685982, "event_time": 48, "id": "genuine-move:NVDA:iex:48", "ingestion_sequence": 209, "kind": "observation", "price": 149.721832, "received_at": 48, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.73450346, "bid": 149.70455956, "event_time": 48, "id": "genuine-move:NVDA:independent:48", "ingestion_sequence": 210, "kind": "observation", "price": 149.71953151, "received_at": 48, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:48", "ingestion_sequence": 211, "kind": "timer", "received_at": 48}
+{"ingestion_sequence": 212, "kind": "truth", "price": 149.721832, "received_at": 48}
+{"ask": 480.048, "bid": 479.952, "event_time": 49, "id": "genuine-move:NVDA:qqq:49", "ingestion_sequence": 213, "kind": "observation", "price": 480.0, "received_at": 49, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.73979748, "bid": 149.70985252, "event_time": 49, "id": "genuine-move:NVDA:iex:49", "ingestion_sequence": 214, "kind": "observation", "price": 149.724825, "received_at": 49, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:49", "ingestion_sequence": 215, "kind": "timer", "received_at": 49}
+{"ingestion_sequence": 216, "kind": "truth", "price": 149.724825, "received_at": 49}
+{"ask": 480.048, "bid": 479.952, "event_time": 50, "id": "genuine-move:NVDA:qqq:50", "ingestion_sequence": 217, "kind": "observation", "price": 480.0, "received_at": 50, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.74279078, "bid": 149.71284522, "event_time": 50, "id": "genuine-move:NVDA:iex:50", "ingestion_sequence": 218, "kind": "observation", "price": 149.727818, "received_at": 50, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:50", "ingestion_sequence": 219, "kind": "timer", "received_at": 50}
+{"ingestion_sequence": 220, "kind": "truth", "price": 149.727818, "received_at": 50}
+{"ask": 480.048, "bid": 479.952, "event_time": 51, "id": "genuine-move:NVDA:qqq:51", "ingestion_sequence": 221, "kind": "observation", "price": 480.0, "received_at": 51, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.74578408, "bid": 149.71583792, "event_time": 51, "id": "genuine-move:NVDA:iex:51", "ingestion_sequence": 222, "kind": "observation", "price": 149.730811, "received_at": 51, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.74779136, "bid": 149.7178448, "event_time": 51, "id": "genuine-move:NVDA:independent:51", "ingestion_sequence": 223, "kind": "observation", "price": 149.73281808, "received_at": 51, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:51", "ingestion_sequence": 224, "kind": "timer", "received_at": 51}
+{"ingestion_sequence": 225, "kind": "truth", "price": 149.730811, "received_at": 51}
+{"ask": 480.048, "bid": 479.952, "event_time": 52, "id": "genuine-move:NVDA:qqq:52", "ingestion_sequence": 226, "kind": "observation", "price": 480.0, "received_at": 52, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.74877738, "bid": 149.71883062, "event_time": 52, "id": "genuine-move:NVDA:iex:52", "ingestion_sequence": 227, "kind": "observation", "price": 149.733804, "received_at": 52, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:52", "ingestion_sequence": 228, "kind": "timer", "received_at": 52}
+{"ingestion_sequence": 229, "kind": "truth", "price": 149.733804, "received_at": 52}
+{"ask": 480.048, "bid": 479.952, "event_time": 53, "id": "genuine-move:NVDA:qqq:53", "ingestion_sequence": 230, "kind": "observation", "price": 480.0, "received_at": 53, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.75177068, "bid": 149.72182332, "event_time": 53, "id": "genuine-move:NVDA:iex:53", "ingestion_sequence": 231, "kind": "observation", "price": 149.736797, "received_at": 53, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:53", "ingestion_sequence": 232, "kind": "timer", "received_at": 53}
+{"ingestion_sequence": 233, "kind": "truth", "price": 149.736797, "received_at": 53}
+{"ask": 480.048, "bid": 479.952, "event_time": 54, "id": "genuine-move:NVDA:qqq:54", "ingestion_sequence": 234, "kind": "observation", "price": 480.0, "received_at": 54, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.75476398, "bid": 149.72481602, "event_time": 54, "id": "genuine-move:NVDA:iex:54", "ingestion_sequence": 235, "kind": "observation", "price": 149.73979, "received_at": 54, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.75309035, "bid": 149.72314273, "event_time": 54, "id": "genuine-move:NVDA:independent:54", "ingestion_sequence": 236, "kind": "observation", "price": 149.73811654, "received_at": 54, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:54", "ingestion_sequence": 237, "kind": "timer", "received_at": 54}
+{"ingestion_sequence": 238, "kind": "truth", "price": 149.73979, "received_at": 54}
+{"ask": 480.048, "bid": 479.952, "event_time": 55, "id": "genuine-move:NVDA:qqq:55", "ingestion_sequence": 239, "kind": "observation", "price": 480.0, "received_at": 55, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.75775728, "bid": 149.72780872, "event_time": 55, "id": "genuine-move:NVDA:iex:55", "ingestion_sequence": 240, "kind": "observation", "price": 149.742783, "received_at": 55, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:55", "ingestion_sequence": 241, "kind": "timer", "received_at": 55}
+{"ingestion_sequence": 242, "kind": "truth", "price": 149.742783, "received_at": 55}
+{"ask": 480.048, "bid": 479.952, "event_time": 56, "id": "genuine-move:NVDA:qqq:56", "ingestion_sequence": 243, "kind": "observation", "price": 480.0, "received_at": 56, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.76075058, "bid": 149.73080142, "event_time": 56, "id": "genuine-move:NVDA:iex:56", "ingestion_sequence": 244, "kind": "observation", "price": 149.745776, "received_at": 56, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:56", "ingestion_sequence": 245, "kind": "timer", "received_at": 56}
+{"ingestion_sequence": 246, "kind": "truth", "price": 149.745776, "received_at": 56}
+{"ask": 480.048, "bid": 479.952, "event_time": 57, "id": "genuine-move:NVDA:qqq:57", "ingestion_sequence": 247, "kind": "observation", "price": 480.0, "received_at": 57, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.76374388, "bid": 149.73379412, "event_time": 57, "id": "genuine-move:NVDA:iex:57", "ingestion_sequence": 248, "kind": "observation", "price": 149.748769, "received_at": 57, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.76505031, "bid": 149.7351003, "event_time": 57, "id": "genuine-move:NVDA:independent:57", "ingestion_sequence": 249, "kind": "observation", "price": 149.7500753, "received_at": 57, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:57", "ingestion_sequence": 250, "kind": "timer", "received_at": 57}
+{"ingestion_sequence": 251, "kind": "truth", "price": 149.748769, "received_at": 57}
+{"ask": 480.048, "bid": 479.952, "event_time": 58, "id": "genuine-move:NVDA:qqq:58", "ingestion_sequence": 252, "kind": "observation", "price": 480.0, "received_at": 58, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.76673718, "bid": 149.73678682, "event_time": 58, "id": "genuine-move:NVDA:iex:58", "ingestion_sequence": 253, "kind": "observation", "price": 149.751762, "received_at": 58, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:58", "ingestion_sequence": 254, "kind": "timer", "received_at": 58}
+{"ingestion_sequence": 255, "kind": "truth", "price": 149.751762, "received_at": 58}
+{"ask": 480.048, "bid": 479.952, "event_time": 59, "id": "genuine-move:NVDA:qqq:59", "ingestion_sequence": 256, "kind": "observation", "price": 480.0, "received_at": 59, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.76973048, "bid": 149.73977952, "event_time": 59, "id": "genuine-move:NVDA:iex:59", "ingestion_sequence": 257, "kind": "observation", "price": 149.754755, "received_at": 59, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"id": "timer:59", "ingestion_sequence": 258, "kind": "timer", "received_at": 59}
+{"ingestion_sequence": 259, "kind": "truth", "price": 149.754755, "received_at": 59}
+{"ask": 480.048, "bid": 479.952, "event_time": 60, "id": "genuine-move:NVDA:qqq:60", "ingestion_sequence": 260, "kind": "observation", "price": 480.0, "received_at": 60, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 149.77272377, "bid": 149.74277223, "event_time": 60, "id": "genuine-move:NVDA:iex:60", "ingestion_sequence": 261, "kind": "observation", "price": 149.757748, "received_at": 60, "representation": "USD_SHARE", "source_id": "iex", "symbol": "NVDA"}
+{"ask": 149.77181073, "bid": 149.74185936, "event_time": 60, "id": "genuine-move:NVDA:independent:60", "ingestion_sequence": 262, "kind": "observation", "price": 149.75683504, "received_at": 60, "representation": "USD_SHARE", "source_id": "independent", "symbol": "NVDA"}
+{"id": "timer:60", "ingestion_sequence": 263, "kind": "timer", "received_at": 60}
+{"ingestion_sequence": 264, "kind": "truth", "price": 149.757748, "received_at": 60}
+{"ingestion_sequence": 265, "kind": "outcome", "price": 149.757748, "received_at": 60, "source_family": "independent-synthetic-outcome"}

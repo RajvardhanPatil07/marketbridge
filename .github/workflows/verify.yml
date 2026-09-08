@@ -1,0 +1,68 @@
+name: Verify synthetic demo
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UV_FROZEN: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          version: "0.12.3"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install locked Python dependencies
+        run: uv sync --frozen
+
+      - name: Install locked frontend dependencies
+        run: npm --prefix apps/web ci
+
+      - name: Verify lint, tests, types, and frontend build
+        run: make verify
+
+      - name: Export synthetic functional evaluation
+        run: make evaluate
+
+      - name: Export synthetic replay
+        run: make replay
+
+      - name: Retain synthetic evaluation artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: synthetic-demo-evidence
+          path: artifacts/*.json
+          if-no-files-found: error
+          retention-days: 7

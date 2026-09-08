@@ -1,0 +1,253 @@
+{"data_mode": "SYNTHETIC_TEST", "duration_seconds": 60, "generator_version": "1", "kind": "metadata", "scenario_id": "reopening", "symbol": "TSLA"}
+{"ask": 480.048, "bid": 479.952, "event_time": 0, "id": "reopening:TSLA:qqq:0", "ingestion_sequence": 1, "kind": "observation", "price": 480.0, "received_at": 0, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 346.83468, "bid": 346.76532, "event_time": 0, "id": "reopening:TSLA:iex:0", "ingestion_sequence": 2, "kind": "observation", "price": 346.8, "received_at": 0, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 346.83468, "bid": 346.76532, "event_time": 0, "id": "reopening:TSLA:independent:0", "ingestion_sequence": 3, "kind": "observation", "price": 346.8, "received_at": 0, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:0", "ingestion_sequence": 4, "kind": "timer", "received_at": 0}
+{"ingestion_sequence": 5, "kind": "truth", "price": 346.8, "received_at": 0}
+{"ask": 480.07680288, "bid": 479.98079712, "event_time": 1, "id": "reopening:TSLA:qqq:1", "ingestion_sequence": 6, "kind": "observation", "price": 480.0288, "received_at": 1, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 346.88305225, "bid": 346.81368257, "event_time": 1, "id": "reopening:TSLA:iex:1", "ingestion_sequence": 7, "kind": "observation", "price": 346.84836741, "received_at": 1, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:1", "ingestion_sequence": 8, "kind": "timer", "received_at": 1}
+{"ingestion_sequence": 9, "kind": "truth", "price": 346.84836741, "received_at": 1}
+{"ask": 480.10560576, "bid": 480.00959424, "event_time": 2, "id": "reopening:TSLA:qqq:2", "ingestion_sequence": 10, "kind": "observation", "price": 480.0576, "received_at": 2, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 346.93032568, "bid": 346.86094655, "event_time": 2, "id": "reopening:TSLA:iex:2", "ingestion_sequence": 11, "kind": "observation", "price": 346.89563611, "received_at": 2, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:2", "ingestion_sequence": 12, "kind": "timer", "received_at": 2}
+{"ingestion_sequence": 13, "kind": "truth", "price": 346.89563611, "received_at": 2}
+{"ask": 480.13440864, "bid": 480.03839136, "event_time": 3, "id": "reopening:TSLA:qqq:3", "ingestion_sequence": 14, "kind": "observation", "price": 480.0864, "received_at": 3, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 346.97544528, "bid": 346.90605713, "event_time": 3, "id": "reopening:TSLA:iex:3", "ingestion_sequence": 15, "kind": "observation", "price": 346.9407512, "received_at": 3, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 346.97642458, "bid": 346.90703624, "event_time": 3, "id": "reopening:TSLA:independent:3", "ingestion_sequence": 16, "kind": "observation", "price": 346.94173041, "received_at": 3, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:3", "ingestion_sequence": 17, "kind": "timer", "received_at": 3}
+{"ingestion_sequence": 18, "kind": "truth", "price": 346.9407512, "received_at": 3}
+{"ask": 480.16321152, "bid": 480.06718848, "event_time": 4, "id": "reopening:TSLA:qqq:4", "ingestion_sequence": 19, "kind": "observation", "price": 480.1152, "received_at": 4, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.01744191, "bid": 346.94804536, "event_time": 4, "id": "reopening:TSLA:iex:4", "ingestion_sequence": 20, "kind": "observation", "price": 346.98274364, "received_at": 4, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:4", "ingestion_sequence": 21, "kind": "timer", "received_at": 4}
+{"ingestion_sequence": 22, "kind": "truth", "price": 346.98274364, "received_at": 4}
+{"ask": 480.1920144, "bid": 480.0959856, "event_time": 5, "id": "reopening:TSLA:qqq:5", "ingestion_sequence": 23, "kind": "observation", "price": 480.144, "received_at": 5, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.05547093, "bid": 346.98606678, "event_time": 5, "id": "reopening:TSLA:iex:5", "ingestion_sequence": 24, "kind": "observation", "price": 347.02076886, "received_at": 5, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:5", "ingestion_sequence": 25, "kind": "timer", "received_at": 5}
+{"ingestion_sequence": 26, "kind": "truth", "price": 347.02076886, "received_at": 5}
+{"ask": 480.22081728, "bid": 480.12478272, "event_time": 6, "id": "reopening:TSLA:qqq:6", "ingestion_sequence": 27, "kind": "observation", "price": 480.1728, "received_at": 6, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.08884588, "bid": 347.01943505, "event_time": 6, "id": "reopening:TSLA:iex:6", "ingestion_sequence": 28, "kind": "observation", "price": 347.05414046, "received_at": 6, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 347.08690624, "bid": 347.0174958, "event_time": 6, "id": "reopening:TSLA:independent:6", "ingestion_sequence": 29, "kind": "observation", "price": 347.05220102, "received_at": 6, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:6", "ingestion_sequence": 30, "kind": "timer", "received_at": 6}
+{"ingestion_sequence": 31, "kind": "truth", "price": 347.05414046, "received_at": 6}
+{"ask": 480.24962016, "bid": 480.15357984, "event_time": 7, "id": "reopening:TSLA:qqq:7", "ingestion_sequence": 32, "kind": "observation", "price": 480.2016, "received_at": 7, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.11706582, "bid": 347.04764935, "event_time": 7, "id": "reopening:TSLA:iex:7", "ingestion_sequence": 33, "kind": "observation", "price": 347.08235759, "received_at": 7, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:7", "ingestion_sequence": 34, "kind": "timer", "received_at": 7}
+{"ingestion_sequence": 35, "kind": "truth", "price": 347.08235759, "received_at": 7}
+{"ask": 480.27842304, "bid": 480.18237696, "event_time": 8, "id": "reopening:TSLA:qqq:8", "ingestion_sequence": 36, "kind": "observation", "price": 480.2304, "received_at": 8, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.13983536, "bid": 347.07041434, "event_time": 8, "id": "reopening:TSLA:iex:8", "ingestion_sequence": 37, "kind": "observation", "price": 347.10512485, "received_at": 8, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:8", "ingestion_sequence": 38, "kind": "timer", "received_at": 8}
+{"ingestion_sequence": 39, "kind": "truth", "price": 347.10512485, "received_at": 8}
+{"ask": 480.30722592, "bid": 480.21117408, "event_time": 9, "id": "reopening:TSLA:qqq:9", "ingestion_sequence": 40, "kind": "observation", "price": 480.2592, "received_at": 9, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.15707638, "bid": 347.08765191, "event_time": 9, "id": "reopening:TSLA:iex:9", "ingestion_sequence": 41, "kind": "observation", "price": 347.12236414, "received_at": 9, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 347.15993778, "bid": 347.09051273, "event_time": 9, "id": "reopening:TSLA:independent:9", "ingestion_sequence": 42, "kind": "observation", "price": 347.12522525, "received_at": 9, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:9", "ingestion_sequence": 43, "kind": "timer", "received_at": 9}
+{"ingestion_sequence": 44, "kind": "truth", "price": 347.12236414, "received_at": 9}
+{"ask": 480.3360288, "bid": 480.2399712, "event_time": 10, "id": "reopening:TSLA:qqq:10", "ingestion_sequence": 45, "kind": "observation", "price": 480.288, "received_at": 10, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.16893116, "bid": 347.09950432, "event_time": 10, "id": "reopening:TSLA:iex:10", "ingestion_sequence": 46, "kind": "observation", "price": 347.13421774, "received_at": 10, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:10", "ingestion_sequence": 47, "kind": "timer", "received_at": 10}
+{"ingestion_sequence": 48, "kind": "truth", "price": 347.13421774, "received_at": 10}
+{"ask": 480.36483168, "bid": 480.26876832, "event_time": 11, "id": "reopening:TSLA:qqq:11", "ingestion_sequence": 49, "kind": "observation", "price": 480.3168, "received_at": 11, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.17575673, "bid": 347.10632852, "event_time": 11, "id": "reopening:TSLA:iex:11", "ingestion_sequence": 50, "kind": "observation", "price": 347.14104262, "received_at": 11, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:11", "ingestion_sequence": 51, "kind": "timer", "received_at": 11}
+{"ingestion_sequence": 52, "kind": "truth", "price": 347.14104262, "received_at": 11}
+{"ask": 480.39363456, "bid": 480.29756544, "event_time": 12, "id": "reopening:TSLA:qqq:12", "ingestion_sequence": 53, "kind": "observation", "price": 480.3456, "received_at": 12, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 347.17811059, "bid": 347.10868191, "event_time": 12, "id": "reopening:TSLA:iex:12", "ingestion_sequence": 54, "kind": "observation", "price": 347.14339625, "received_at": 12, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 347.17438486, "bid": 347.10495693, "event_time": 12, "id": "reopening:TSLA:independent:12", "ingestion_sequence": 55, "kind": "observation", "price": 347.1396709, "received_at": 12, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:12", "ingestion_sequence": 56, "kind": "timer", "received_at": 12}
+{"ingestion_sequence": 57, "kind": "truth", "price": 347.14339625, "received_at": 12}
+{"ask": 480.42243744, "bid": 480.32636256, "event_time": 13, "id": "reopening:TSLA:qqq:13", "ingestion_sequence": 58, "kind": "observation", "price": 480.3744, "received_at": 13, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:13", "ingestion_sequence": 59, "kind": "timer", "received_at": 13}
+{"ingestion_sequence": 60, "kind": "truth", "price": 347.14201435, "received_at": 13}
+{"ask": 480.45124032, "bid": 480.35515968, "event_time": 14, "id": "reopening:TSLA:qqq:14", "ingestion_sequence": 61, "kind": "observation", "price": 480.4032, "received_at": 14, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:14", "ingestion_sequence": 62, "kind": "timer", "received_at": 14}
+{"ingestion_sequence": 63, "kind": "truth", "price": 347.13778156, "received_at": 14}
+{"ask": 480.4800432, "bid": 480.3839568, "event_time": 15, "id": "reopening:TSLA:qqq:15", "ingestion_sequence": 64, "kind": "observation", "price": 480.432, "received_at": 15, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:15", "ingestion_sequence": 65, "kind": "timer", "received_at": 15}
+{"ingestion_sequence": 66, "kind": "truth", "price": 347.13169617, "received_at": 15}
+{"ask": 480.50884608, "bid": 480.41275392, "event_time": 16, "id": "reopening:TSLA:qqq:16", "ingestion_sequence": 67, "kind": "observation", "price": 480.4608, "received_at": 16, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:16", "ingestion_sequence": 68, "kind": "timer", "received_at": 16}
+{"ingestion_sequence": 69, "kind": "truth", "price": 347.12483034, "received_at": 16}
+{"ask": 480.53764896, "bid": 480.44155104, "event_time": 17, "id": "reopening:TSLA:qqq:17", "ingestion_sequence": 70, "kind": "observation", "price": 480.4896, "received_at": 17, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:17", "ingestion_sequence": 71, "kind": "timer", "received_at": 17}
+{"ingestion_sequence": 72, "kind": "truth", "price": 347.11828734, "received_at": 17}
+{"ask": 480.56645184, "bid": 480.47034816, "event_time": 18, "id": "reopening:TSLA:qqq:18", "ingestion_sequence": 73, "kind": "observation", "price": 480.5184, "received_at": 18, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:18", "ingestion_sequence": 74, "kind": "timer", "received_at": 18}
+{"ingestion_sequence": 75, "kind": "truth", "price": 347.11315756, "received_at": 18}
+{"ask": 480.59525472, "bid": 480.49914528, "event_time": 19, "id": "reopening:TSLA:qqq:19", "ingestion_sequence": 76, "kind": "observation", "price": 480.5472, "received_at": 19, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:19", "ingestion_sequence": 77, "kind": "timer", "received_at": 19}
+{"ingestion_sequence": 78, "kind": "truth", "price": 347.11047507, "received_at": 19}
+{"ask": 480.6240576, "bid": 480.5279424, "event_time": 20, "id": "reopening:TSLA:qqq:20", "ingestion_sequence": 79, "kind": "observation", "price": 480.576, "received_at": 20, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:20", "ingestion_sequence": 80, "kind": "timer", "received_at": 20}
+{"ingestion_sequence": 81, "kind": "truth", "price": 347.11117636, "received_at": 20}
+{"ask": 480.65286048, "bid": 480.55673952, "event_time": 21, "id": "reopening:TSLA:qqq:21", "ingestion_sequence": 82, "kind": "observation", "price": 480.6048, "received_at": 21, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:21", "ingestion_sequence": 83, "kind": "timer", "received_at": 21}
+{"ingestion_sequence": 84, "kind": "truth", "price": 347.11606301, "received_at": 21}
+{"ask": 480.68166336, "bid": 480.58553664, "event_time": 22, "id": "reopening:TSLA:qqq:22", "ingestion_sequence": 85, "kind": "observation", "price": 480.6336, "received_at": 22, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:22", "ingestion_sequence": 86, "kind": "timer", "received_at": 22}
+{"ingestion_sequence": 87, "kind": "truth", "price": 347.12576976, "received_at": 22}
+{"ask": 480.71046624, "bid": 480.61433376, "event_time": 23, "id": "reopening:TSLA:qqq:23", "ingestion_sequence": 88, "kind": "observation", "price": 480.6624, "received_at": 23, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"id": "timer:23", "ingestion_sequence": 89, "kind": "timer", "received_at": 23}
+{"ingestion_sequence": 90, "kind": "truth", "price": 347.14073918, "received_at": 23}
+{"ask": 480.73926912, "bid": 480.64313088, "event_time": 24, "id": "reopening:TSLA:qqq:24", "ingestion_sequence": 91, "kind": "observation", "price": 480.6912, "received_at": 24, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.2145184, "bid": 305.1534816, "event_time": 24, "id": "reopening:TSLA:iex:24", "ingestion_sequence": 92, "kind": "observation", "price": 305.184, "received_at": 24, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.2145184, "bid": 305.1534816, "event_time": 24, "id": "reopening:TSLA:auction:24", "ingestion_sequence": 93, "kind": "observation", "official_open": true, "price": 305.184, "received_at": 24, "representation": "USD_SHARE", "source_id": "auction", "symbol": "TSLA", "verified": true}
+{"id": "timer:24", "ingestion_sequence": 94, "kind": "timer", "received_at": 24}
+{"ingestion_sequence": 95, "kind": "truth", "price": 305.184, "received_at": 24}
+{"ask": 480.768072, "bid": 480.671928, "event_time": 25, "id": "reopening:TSLA:qqq:25", "ingestion_sequence": 96, "kind": "observation", "price": 480.72, "received_at": 25, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.23283127, "bid": 305.17179081, "event_time": 25, "id": "reopening:TSLA:iex:25", "ingestion_sequence": 97, "kind": "observation", "price": 305.20231104, "received_at": 25, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:25", "ingestion_sequence": 98, "kind": "timer", "received_at": 25}
+{"ingestion_sequence": 99, "kind": "truth", "price": 305.20231104, "received_at": 25}
+{"ask": 480.79687488, "bid": 480.70072512, "event_time": 26, "id": "reopening:TSLA:qqq:26", "ingestion_sequence": 100, "kind": "observation", "price": 480.7488, "received_at": 26, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.25114414, "bid": 305.19010002, "event_time": 26, "id": "reopening:TSLA:iex:26", "ingestion_sequence": 101, "kind": "observation", "price": 305.22062208, "received_at": 26, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:26", "ingestion_sequence": 102, "kind": "timer", "received_at": 26}
+{"ingestion_sequence": 103, "kind": "truth", "price": 305.22062208, "received_at": 26}
+{"ask": 480.82567776, "bid": 480.72952224, "event_time": 27, "id": "reopening:TSLA:qqq:27", "ingestion_sequence": 104, "kind": "observation", "price": 480.7776, "received_at": 27, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.26945701, "bid": 305.20840923, "event_time": 27, "id": "reopening:TSLA:iex:27", "ingestion_sequence": 105, "kind": "observation", "price": 305.23893312, "received_at": 27, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.27529606, "bid": 305.21424711, "event_time": 27, "id": "reopening:TSLA:independent:27", "ingestion_sequence": 106, "kind": "observation", "price": 305.24477158, "received_at": 27, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:27", "ingestion_sequence": 107, "kind": "timer", "received_at": 27}
+{"ingestion_sequence": 108, "kind": "truth", "price": 305.23893312, "received_at": 27}
+{"ask": 480.85448064, "bid": 480.75831936, "event_time": 28, "id": "reopening:TSLA:qqq:28", "ingestion_sequence": 109, "kind": "observation", "price": 480.8064, "received_at": 28, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.28776988, "bid": 305.22671844, "event_time": 28, "id": "reopening:TSLA:iex:28", "ingestion_sequence": 110, "kind": "observation", "price": 305.25724416, "received_at": 28, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:28", "ingestion_sequence": 111, "kind": "timer", "received_at": 28}
+{"ingestion_sequence": 112, "kind": "truth", "price": 305.25724416, "received_at": 28}
+{"ask": 480.88328352, "bid": 480.78711648, "event_time": 29, "id": "reopening:TSLA:qqq:29", "ingestion_sequence": 113, "kind": "observation", "price": 480.8352, "received_at": 29, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.30608276, "bid": 305.24502764, "event_time": 29, "id": "reopening:TSLA:iex:29", "ingestion_sequence": 114, "kind": "observation", "price": 305.2755552, "received_at": 29, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:29", "ingestion_sequence": 115, "kind": "timer", "received_at": 29}
+{"ingestion_sequence": 116, "kind": "truth", "price": 305.2755552, "received_at": 29}
+{"ask": 480.9120864, "bid": 480.8159136, "event_time": 30, "id": "reopening:TSLA:qqq:30", "ingestion_sequence": 117, "kind": "observation", "price": 480.864, "received_at": 30, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.32439563, "bid": 305.26333685, "event_time": 30, "id": "reopening:TSLA:iex:30", "ingestion_sequence": 118, "kind": "observation", "price": 305.29386624, "received_at": 30, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.31836222, "bid": 305.25730466, "event_time": 30, "id": "reopening:TSLA:independent:30", "ingestion_sequence": 119, "kind": "observation", "price": 305.28783344, "received_at": 30, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:30", "ingestion_sequence": 120, "kind": "timer", "received_at": 30}
+{"ingestion_sequence": 121, "kind": "truth", "price": 305.29386624, "received_at": 30}
+{"ask": 480.94088928, "bid": 480.84471072, "event_time": 31, "id": "reopening:TSLA:qqq:31", "ingestion_sequence": 122, "kind": "observation", "price": 480.8928, "received_at": 31, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.3427085, "bid": 305.28164606, "event_time": 31, "id": "reopening:TSLA:iex:31", "ingestion_sequence": 123, "kind": "observation", "price": 305.31217728, "received_at": 31, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:31", "ingestion_sequence": 124, "kind": "timer", "received_at": 31}
+{"ingestion_sequence": 125, "kind": "truth", "price": 305.31217728, "received_at": 31}
+{"ask": 480.96969216, "bid": 480.87350784, "event_time": 32, "id": "reopening:TSLA:qqq:32", "ingestion_sequence": 126, "kind": "observation", "price": 480.9216, "received_at": 32, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.36102137, "bid": 305.29995527, "event_time": 32, "id": "reopening:TSLA:iex:32", "ingestion_sequence": 127, "kind": "observation", "price": 305.33048832, "received_at": 32, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:32", "ingestion_sequence": 128, "kind": "timer", "received_at": 32}
+{"ingestion_sequence": 129, "kind": "truth", "price": 305.33048832, "received_at": 32}
+{"ask": 480.99849504, "bid": 480.90230496, "event_time": 33, "id": "reopening:TSLA:qqq:33", "ingestion_sequence": 130, "kind": "observation", "price": 480.9504, "received_at": 33, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.37933424, "bid": 305.31826448, "event_time": 33, "id": "reopening:TSLA:iex:33", "ingestion_sequence": 131, "kind": "observation", "price": 305.34879936, "received_at": 33, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.38544129, "bid": 305.32437031, "event_time": 33, "id": "reopening:TSLA:independent:33", "ingestion_sequence": 132, "kind": "observation", "price": 305.3549058, "received_at": 33, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:33", "ingestion_sequence": 133, "kind": "timer", "received_at": 33}
+{"ingestion_sequence": 134, "kind": "truth", "price": 305.34879936, "received_at": 33}
+{"ask": 481.02729792, "bid": 480.93110208, "event_time": 34, "id": "reopening:TSLA:qqq:34", "ingestion_sequence": 135, "kind": "observation", "price": 480.9792, "received_at": 34, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.39764711, "bid": 305.33657369, "event_time": 34, "id": "reopening:TSLA:iex:34", "ingestion_sequence": 136, "kind": "observation", "price": 305.3671104, "received_at": 34, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:34", "ingestion_sequence": 137, "kind": "timer", "received_at": 34}
+{"ingestion_sequence": 138, "kind": "truth", "price": 305.3671104, "received_at": 34}
+{"ask": 481.0561008, "bid": 480.9598992, "event_time": 35, "id": "reopening:TSLA:qqq:35", "ingestion_sequence": 139, "kind": "observation", "price": 481.008, "received_at": 35, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.41595998, "bid": 305.3548829, "event_time": 35, "id": "reopening:TSLA:iex:35", "ingestion_sequence": 140, "kind": "observation", "price": 305.38542144, "received_at": 35, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:35", "ingestion_sequence": 141, "kind": "timer", "received_at": 35}
+{"ingestion_sequence": 142, "kind": "truth", "price": 305.38542144, "received_at": 35}
+{"ask": 481.08490368, "bid": 480.98869632, "event_time": 36, "id": "reopening:TSLA:qqq:36", "ingestion_sequence": 143, "kind": "observation", "price": 481.0368, "received_at": 36, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.43427285, "bid": 305.37319211, "event_time": 36, "id": "reopening:TSLA:iex:36", "ingestion_sequence": 144, "kind": "observation", "price": 305.40373248, "received_at": 36, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.42821439, "bid": 305.36713485, "event_time": 36, "id": "reopening:TSLA:independent:36", "ingestion_sequence": 145, "kind": "observation", "price": 305.39767462, "received_at": 36, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:36", "ingestion_sequence": 146, "kind": "timer", "received_at": 36}
+{"ingestion_sequence": 147, "kind": "truth", "price": 305.40373248, "received_at": 36}
+{"ask": 481.11370656, "bid": 481.01749344, "event_time": 37, "id": "reopening:TSLA:qqq:37", "ingestion_sequence": 148, "kind": "observation", "price": 481.0656, "received_at": 37, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.45258572, "bid": 305.39150132, "event_time": 37, "id": "reopening:TSLA:iex:37", "ingestion_sequence": 149, "kind": "observation", "price": 305.42204352, "received_at": 37, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:37", "ingestion_sequence": 150, "kind": "timer", "received_at": 37}
+{"ingestion_sequence": 151, "kind": "truth", "price": 305.42204352, "received_at": 37}
+{"ask": 481.14250944, "bid": 481.04629056, "event_time": 38, "id": "reopening:TSLA:qqq:38", "ingestion_sequence": 152, "kind": "observation", "price": 481.0944, "received_at": 38, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.4708986, "bid": 305.40981052, "event_time": 38, "id": "reopening:TSLA:iex:38", "ingestion_sequence": 153, "kind": "observation", "price": 305.44035456, "received_at": 38, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:38", "ingestion_sequence": 154, "kind": "timer", "received_at": 38}
+{"ingestion_sequence": 155, "kind": "truth", "price": 305.44035456, "received_at": 38}
+{"ask": 481.17131232, "bid": 481.07508768, "event_time": 39, "id": "reopening:TSLA:qqq:39", "ingestion_sequence": 156, "kind": "observation", "price": 481.1232, "received_at": 39, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.48921147, "bid": 305.42811973, "event_time": 39, "id": "reopening:TSLA:iex:39", "ingestion_sequence": 157, "kind": "observation", "price": 305.4586656, "received_at": 39, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.49510005, "bid": 305.43400714, "event_time": 39, "id": "reopening:TSLA:independent:39", "ingestion_sequence": 158, "kind": "observation", "price": 305.46455359, "received_at": 39, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:39", "ingestion_sequence": 159, "kind": "timer", "received_at": 39}
+{"ingestion_sequence": 160, "kind": "truth", "price": 305.4586656, "received_at": 39}
+{"ask": 481.2001152, "bid": 481.1038848, "event_time": 40, "id": "reopening:TSLA:qqq:40", "ingestion_sequence": 161, "kind": "observation", "price": 481.152, "received_at": 40, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.50752434, "bid": 305.44642894, "event_time": 40, "id": "reopening:TSLA:iex:40", "ingestion_sequence": 162, "kind": "observation", "price": 305.47697664, "received_at": 40, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:40", "ingestion_sequence": 163, "kind": "timer", "received_at": 40}
+{"ingestion_sequence": 164, "kind": "truth", "price": 305.47697664, "received_at": 40}
+{"ask": 481.22891808, "bid": 481.13268192, "event_time": 41, "id": "reopening:TSLA:qqq:41", "ingestion_sequence": 165, "kind": "observation", "price": 481.1808, "received_at": 41, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.52583721, "bid": 305.46473815, "event_time": 41, "id": "reopening:TSLA:iex:41", "ingestion_sequence": 166, "kind": "observation", "price": 305.49528768, "received_at": 41, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:41", "ingestion_sequence": 167, "kind": "timer", "received_at": 41}
+{"ingestion_sequence": 168, "kind": "truth", "price": 305.49528768, "received_at": 41}
+{"ask": 481.25772096, "bid": 481.16147904, "event_time": 42, "id": "reopening:TSLA:qqq:42", "ingestion_sequence": 169, "kind": "observation", "price": 481.2096, "received_at": 42, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.54415008, "bid": 305.48304736, "event_time": 42, "id": "reopening:TSLA:iex:42", "ingestion_sequence": 170, "kind": "observation", "price": 305.51359872, "received_at": 42, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.53854932, "bid": 305.47744772, "event_time": 42, "id": "reopening:TSLA:independent:42", "ingestion_sequence": 171, "kind": "observation", "price": 305.50799852, "received_at": 42, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:42", "ingestion_sequence": 172, "kind": "timer", "received_at": 42}
+{"ingestion_sequence": 173, "kind": "truth", "price": 305.51359872, "received_at": 42}
+{"ask": 481.28652384, "bid": 481.19027616, "event_time": 43, "id": "reopening:TSLA:qqq:43", "ingestion_sequence": 174, "kind": "observation", "price": 481.2384, "received_at": 43, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.56246295, "bid": 305.50135657, "event_time": 43, "id": "reopening:TSLA:iex:43", "ingestion_sequence": 175, "kind": "observation", "price": 305.53190976, "received_at": 43, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:43", "ingestion_sequence": 176, "kind": "timer", "received_at": 43}
+{"ingestion_sequence": 177, "kind": "truth", "price": 305.53190976, "received_at": 43}
+{"ask": 481.31532672, "bid": 481.21907328, "event_time": 44, "id": "reopening:TSLA:qqq:44", "ingestion_sequence": 178, "kind": "observation", "price": 481.2672, "received_at": 44, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.58077582, "bid": 305.51966578, "event_time": 44, "id": "reopening:TSLA:iex:44", "ingestion_sequence": 179, "kind": "observation", "price": 305.5502208, "received_at": 44, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:44", "ingestion_sequence": 180, "kind": "timer", "received_at": 44}
+{"ingestion_sequence": 181, "kind": "truth", "price": 305.5502208, "received_at": 44}
+{"ask": 481.3441296, "bid": 481.2478704, "event_time": 45, "id": "reopening:TSLA:qqq:45", "ingestion_sequence": 182, "kind": "observation", "price": 481.296, "received_at": 45, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.59908869, "bid": 305.53797499, "event_time": 45, "id": "reopening:TSLA:iex:45", "ingestion_sequence": 183, "kind": "observation", "price": 305.56853184, "received_at": 45, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.6042894, "bid": 305.54317465, "event_time": 45, "id": "reopening:TSLA:independent:45", "ingestion_sequence": 184, "kind": "observation", "price": 305.57373203, "received_at": 45, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:45", "ingestion_sequence": 185, "kind": "timer", "received_at": 45}
+{"ingestion_sequence": 186, "kind": "truth", "price": 305.56853184, "received_at": 45}
+{"ask": 481.37293248, "bid": 481.27666752, "event_time": 46, "id": "reopening:TSLA:qqq:46", "ingestion_sequence": 187, "kind": "observation", "price": 481.3248, "received_at": 46, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.61740156, "bid": 305.5562842, "event_time": 46, "id": "reopening:TSLA:iex:46", "ingestion_sequence": 188, "kind": "observation", "price": 305.58684288, "received_at": 46, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:46", "ingestion_sequence": 189, "kind": "timer", "received_at": 46}
+{"ingestion_sequence": 190, "kind": "truth", "price": 305.58684288, "received_at": 46}
+{"ask": 481.40173536, "bid": 481.30546464, "event_time": 47, "id": "reopening:TSLA:qqq:47", "ingestion_sequence": 191, "kind": "observation", "price": 481.3536, "received_at": 47, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.63571444, "bid": 305.5745934, "event_time": 47, "id": "reopening:TSLA:iex:47", "ingestion_sequence": 192, "kind": "observation", "price": 305.60515392, "received_at": 47, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:47", "ingestion_sequence": 193, "kind": "timer", "received_at": 47}
+{"ingestion_sequence": 194, "kind": "truth", "price": 305.60515392, "received_at": 47}
+{"ask": 481.43053824, "bid": 481.33426176, "event_time": 48, "id": "reopening:TSLA:qqq:48", "ingestion_sequence": 195, "kind": "observation", "price": 481.3824, "received_at": 48, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.65402731, "bid": 305.59290261, "event_time": 48, "id": "reopening:TSLA:iex:48", "ingestion_sequence": 196, "kind": "observation", "price": 305.62346496, "received_at": 48, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.6493309, "bid": 305.58820715, "event_time": 48, "id": "reopening:TSLA:independent:48", "ingestion_sequence": 197, "kind": "observation", "price": 305.61876903, "received_at": 48, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:48", "ingestion_sequence": 198, "kind": "timer", "received_at": 48}
+{"ingestion_sequence": 199, "kind": "truth", "price": 305.62346496, "received_at": 48}
+{"ask": 481.45934112, "bid": 481.36305888, "event_time": 49, "id": "reopening:TSLA:qqq:49", "ingestion_sequence": 200, "kind": "observation", "price": 481.4112, "received_at": 49, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.67234018, "bid": 305.61121182, "event_time": 49, "id": "reopening:TSLA:iex:49", "ingestion_sequence": 201, "kind": "observation", "price": 305.641776, "received_at": 49, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:49", "ingestion_sequence": 202, "kind": "timer", "received_at": 49}
+{"ingestion_sequence": 203, "kind": "truth", "price": 305.641776, "received_at": 49}
+{"ask": 481.488144, "bid": 481.391856, "event_time": 50, "id": "reopening:TSLA:qqq:50", "ingestion_sequence": 204, "kind": "observation", "price": 481.44, "received_at": 50, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.69065305, "bid": 305.62952103, "event_time": 50, "id": "reopening:TSLA:iex:50", "ingestion_sequence": 205, "kind": "observation", "price": 305.66008704, "received_at": 50, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:50", "ingestion_sequence": 206, "kind": "timer", "received_at": 50}
+{"ingestion_sequence": 207, "kind": "truth", "price": 305.66008704, "received_at": 50}
+{"ask": 481.51694688, "bid": 481.42065312, "event_time": 51, "id": "reopening:TSLA:qqq:51", "ingestion_sequence": 208, "kind": "observation", "price": 481.4688, "received_at": 51, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.70896592, "bid": 305.64783024, "event_time": 51, "id": "reopening:TSLA:iex:51", "ingestion_sequence": 209, "kind": "observation", "price": 305.67839808, "received_at": 51, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.71306382, "bid": 305.65192732, "event_time": 51, "id": "reopening:TSLA:independent:51", "ingestion_sequence": 210, "kind": "observation", "price": 305.68249557, "received_at": 51, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:51", "ingestion_sequence": 211, "kind": "timer", "received_at": 51}
+{"ingestion_sequence": 212, "kind": "truth", "price": 305.67839808, "received_at": 51}
+{"ask": 481.54574976, "bid": 481.44945024, "event_time": 52, "id": "reopening:TSLA:qqq:52", "ingestion_sequence": 213, "kind": "observation", "price": 481.4976, "received_at": 52, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.72727879, "bid": 305.66613945, "event_time": 52, "id": "reopening:TSLA:iex:52", "ingestion_sequence": 214, "kind": "observation", "price": 305.69670912, "received_at": 52, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:52", "ingestion_sequence": 215, "kind": "timer", "received_at": 52}
+{"ingestion_sequence": 216, "kind": "truth", "price": 305.69670912, "received_at": 52}
+{"ask": 481.57455264, "bid": 481.47824736, "event_time": 53, "id": "reopening:TSLA:qqq:53", "ingestion_sequence": 217, "kind": "observation", "price": 481.5264, "received_at": 53, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.74559166, "bid": 305.68444866, "event_time": 53, "id": "reopening:TSLA:iex:53", "ingestion_sequence": 218, "kind": "observation", "price": 305.71502016, "received_at": 53, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:53", "ingestion_sequence": 219, "kind": "timer", "received_at": 53}
+{"ingestion_sequence": 220, "kind": "truth", "price": 305.71502016, "received_at": 53}
+{"ask": 481.60335552, "bid": 481.50704448, "event_time": 54, "id": "reopening:TSLA:qqq:54", "ingestion_sequence": 221, "kind": "observation", "price": 481.5552, "received_at": 54, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.76390453, "bid": 305.70275787, "event_time": 54, "id": "reopening:TSLA:iex:54", "ingestion_sequence": 222, "kind": "observation", "price": 305.7333312, "received_at": 54, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.76048738, "bid": 305.6993414, "event_time": 54, "id": "reopening:TSLA:independent:54", "ingestion_sequence": 223, "kind": "observation", "price": 305.72991439, "received_at": 54, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:54", "ingestion_sequence": 224, "kind": "timer", "received_at": 54}
+{"ingestion_sequence": 225, "kind": "truth", "price": 305.7333312, "received_at": 54}
+{"ask": 481.6321584, "bid": 481.5358416, "event_time": 55, "id": "reopening:TSLA:qqq:55", "ingestion_sequence": 226, "kind": "observation", "price": 481.584, "received_at": 55, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.7822174, "bid": 305.72106708, "event_time": 55, "id": "reopening:TSLA:iex:55", "ingestion_sequence": 227, "kind": "observation", "price": 305.75164224, "received_at": 55, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:55", "ingestion_sequence": 228, "kind": "timer", "received_at": 55}
+{"ingestion_sequence": 229, "kind": "truth", "price": 305.75164224, "received_at": 55}
+{"ask": 481.66096128, "bid": 481.56463872, "event_time": 56, "id": "reopening:TSLA:qqq:56", "ingestion_sequence": 230, "kind": "observation", "price": 481.6128, "received_at": 56, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.80053028, "bid": 305.73937628, "event_time": 56, "id": "reopening:TSLA:iex:56", "ingestion_sequence": 231, "kind": "observation", "price": 305.76995328, "received_at": 56, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:56", "ingestion_sequence": 232, "kind": "timer", "received_at": 56}
+{"ingestion_sequence": 233, "kind": "truth", "price": 305.76995328, "received_at": 56}
+{"ask": 481.68976416, "bid": 481.59343584, "event_time": 57, "id": "reopening:TSLA:qqq:57", "ingestion_sequence": 234, "kind": "observation", "price": 481.6416, "received_at": 57, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.81884315, "bid": 305.75768549, "event_time": 57, "id": "reopening:TSLA:iex:57", "ingestion_sequence": 235, "kind": "observation", "price": 305.78826432, "received_at": 57, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.82151089, "bid": 305.76035271, "event_time": 57, "id": "reopening:TSLA:independent:57", "ingestion_sequence": 236, "kind": "observation", "price": 305.7909318, "received_at": 57, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:57", "ingestion_sequence": 237, "kind": "timer", "received_at": 57}
+{"ingestion_sequence": 238, "kind": "truth", "price": 305.78826432, "received_at": 57}
+{"ask": 481.71856704, "bid": 481.62223296, "event_time": 58, "id": "reopening:TSLA:qqq:58", "ingestion_sequence": 239, "kind": "observation", "price": 481.6704, "received_at": 58, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.83715602, "bid": 305.7759947, "event_time": 58, "id": "reopening:TSLA:iex:58", "ingestion_sequence": 240, "kind": "observation", "price": 305.80657536, "received_at": 58, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:58", "ingestion_sequence": 241, "kind": "timer", "received_at": 58}
+{"ingestion_sequence": 242, "kind": "truth", "price": 305.80657536, "received_at": 58}
+{"ask": 481.74736992, "bid": 481.65103008, "event_time": 59, "id": "reopening:TSLA:qqq:59", "ingestion_sequence": 243, "kind": "observation", "price": 481.6992, "received_at": 59, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.85546889, "bid": 305.79430391, "event_time": 59, "id": "reopening:TSLA:iex:59", "ingestion_sequence": 244, "kind": "observation", "price": 305.8248864, "received_at": 59, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"id": "timer:59", "ingestion_sequence": 245, "kind": "timer", "received_at": 59}
+{"ingestion_sequence": 246, "kind": "truth", "price": 305.8248864, "received_at": 59}
+{"ask": 481.7761728, "bid": 481.6798272, "event_time": 60, "id": "reopening:TSLA:qqq:60", "ingestion_sequence": 247, "kind": "observation", "price": 481.728, "received_at": 60, "representation": "USD_SHARE", "source_id": "qqq", "symbol": "QQQ"}
+{"ask": 305.87378176, "bid": 305.81261312, "event_time": 60, "id": "reopening:TSLA:iex:60", "ingestion_sequence": 248, "kind": "observation", "price": 305.84319744, "received_at": 60, "representation": "USD_SHARE", "source_id": "iex", "symbol": "TSLA"}
+{"ask": 305.87191709, "bid": 305.81074882, "event_time": 60, "id": "reopening:TSLA:independent:60", "ingestion_sequence": 249, "kind": "observation", "price": 305.84133295, "received_at": 60, "representation": "USD_SHARE", "source_id": "independent", "symbol": "TSLA"}
+{"id": "timer:60", "ingestion_sequence": 250, "kind": "timer", "received_at": 60}
+{"ingestion_sequence": 251, "kind": "truth", "price": 305.84319744, "received_at": 60}
+{"ingestion_sequence": 252, "kind": "outcome", "price": 305.84319744, "received_at": 60, "source_family": "independent-synthetic-outcome"}
