@@ -10,7 +10,14 @@ from zoneinfo import ZoneInfo
 
 
 
-SYMBOLS = {"NVDA": "NVIDIA", "TSLA": "Tesla", "QQQ": "Invesco QQQ"}
+SYMBOLS = {
+    "NVDA": "NVIDIA Corporation",
+    "TSLA": "Tesla, Inc.",
+    "AAPL": "Apple Inc.",
+    "MSFT": "Microsoft Corporation",
+    "AMD": "Advanced Micro Devices, Inc.",
+    "QQQ": "Invesco QQQ",
+}
 REFRESH_SECONDS = 15
 _cache: dict | None = None
 _cached_at = 0.0
@@ -110,10 +117,19 @@ def get_live_snapshot(force: bool = False) -> dict:
                     observations.append(future.result())
                 except Exception as exc:  # provider/network failures are returned as data
                     errors.append({"symbol": symbol, "message": str(exc)[:180]})
+        fresh_observations = sum(item["source"]["status"] == "FRESH" for item in observations)
+        if observations and fresh_observations == len(observations) and not errors:
+            provider_status = "AVAILABLE"
+        elif observations and fresh_observations == 0:
+            provider_status = "STALE"
+        elif observations:
+            provider_status = "DEGRADED"
+        else:
+            provider_status = "UNAVAILABLE"
         _cache = {
             "data_mode": "LIVE_RESEARCH",
             "provider": "Yahoo Finance via yfinance",
-            "provider_status": "AVAILABLE" if observations and not errors else "DEGRADED" if observations else "UNAVAILABLE",
+            "provider_status": provider_status,
             "market_phase": _market_phase(now),
             "fetched_at": now.isoformat().replace("+00:00", "Z"),
             "refresh_seconds": REFRESH_SECONDS,

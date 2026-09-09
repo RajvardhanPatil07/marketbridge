@@ -1,19 +1,30 @@
+# Python
 .venv/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.pyc
+
+# Frontend
 node_modules/
 .next/
 apps/web/out/
+
+# Secrets
 .env
 .env.*
 !.env.example
+
+# Runtime/generated output
 artifacts/
-.DS_Store
+data/*.csv
 .vercel/
-public/
-.vercel
-.env*
+
+# OS/editor
+.DS_Store
+*.swp
+
 *.tsbuildinfo
 .impeccable/
+apps/web/test-results/
+apps/web/playwright-report/

@@ -1,4 +1,4 @@
-name: Verify synthetic demo
+name: MarketBridge CI
 
 on:
   push:
@@ -52,6 +52,13 @@ jobs:
 
       - name: Verify lint, tests, types, and frontend build
         run: make verify
+
+      - name: Install browser for end-to-end tests
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify live market-data flow end to end
+        run: make e2e
 
       - name: Export synthetic functional evaluation
         run: make evaluate

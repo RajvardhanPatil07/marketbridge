@@ -1,4 +1,4 @@
-.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow clean-artifacts
+.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
 
 setup:
 	uv sync --frozen
@@ -32,3 +32,24 @@ replay:
 
 benchmark-shadow:
 	uv run python scripts/benchmark_shadow.py
+
+live-check:
+	uv run python scripts/check_live_config.py
+
+e2e:
+	npm --prefix apps/web run build
+	npm --prefix apps/web run test:e2e
+	npm --prefix apps/web run test:e2e:healthy
+
+e2e-live:
+	npm --prefix apps/web run build
+	npm --prefix apps/web run test:e2e:live
+
+train-ai:
+	uv run python scripts/train_ai_models.py
+
+build-ml-dataset:
+	uv run python scripts/build_ml_dataset.py
+
+export-evidence:
+	uv run python scripts/export_evidence.py

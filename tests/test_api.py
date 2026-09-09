@@ -14,7 +14,7 @@ def test_catalog_and_all_traces_are_finite_and_deterministic():
     assert response.status_code == 200
     catalog = response.json()
     assert catalog["data_mode"] == "SYNTHETIC_TEST"
-    assert len(catalog["scenarios"]) == 6
+    assert len(catalog["scenarios"]) == 10
     for scenario in catalog["scenarios"]:
         for symbol in ["NVDA", "TSLA"]:
             url = f"/v1/demo/scenarios/{scenario['id']}?symbol={symbol}"
@@ -43,12 +43,18 @@ def test_synthetic_evaluation_is_explicit_and_passes():
     result = response.json()
     assert result["evaluation_kind"] == "synthetic_functional_tests"
     assert result["summary"]["failed"] == 0
-    assert len(result["cases"]) == 12
+    assert len(result["cases"]) == 20
     assert result["limitations"]
     policies = result["cases"][0]["metrics"]["policy_comparison"]
     assert {policy["policy"] for policy in policies} == {
         "MarketBridge guard", "Unguarded feed", "Last qualified price", "1% bounded update"
     }
+
+
+def test_prometheus_metrics_are_exposed():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "marketbridge_decisions_total" in response.text
 
 
 def test_historical_incident_is_explicit_sourced_and_finite():
@@ -109,10 +115,54 @@ def test_live_research_snapshot_is_explicit_and_never_execution_eligible(monkeyp
     assert snapshot["data_mode"] == "LIVE_RESEARCH"
     assert snapshot["provider_status"] == "AVAILABLE"
     assert snapshot["api_key_required"] is False
-    assert {item["symbol"] for item in snapshot["observations"]} == {"NVDA", "TSLA", "QQQ"}
+    assert {item["symbol"] for item in snapshot["observations"]} == {
+        "NVDA",
+        "TSLA",
+        "AAPL",
+        "MSFT",
+        "AMD",
+        "QQQ",
+    }
     assert all(item["decision"]["reference"] is None for item in snapshot["observations"])
     assert all(item["decision"]["new_exposure_allowed"] is False for item in snapshot["observations"])
     json.dumps(snapshot, allow_nan=False)
+    live.clear_live_cache()
+
+
+def test_live_research_provider_is_stale_when_all_observations_are_stale(monkeypatch):
+    def fake_fetch(symbol, now):
+        event_time = now - timedelta(minutes=5)
+        return {
+            "symbol": symbol,
+            "name": live.SYMBOLS[symbol],
+            "observed_price": 200.0,
+            "previous_close": 199.0,
+            "change_pct": 0.5,
+            "currency": "USD",
+            "exchange": "TEST",
+            "event_time": event_time.isoformat().replace("+00:00", "Z"),
+            "age_seconds": 300,
+            "points": [{"timestamp": event_time.isoformat().replace("+00:00", "Z"), "price": 200.0}],
+            "source": {
+                "id": "yahoo-finance",
+                "name": "Yahoo Finance via yfinance",
+                "family": "yahoo-research-feed",
+                "status": "STALE",
+            },
+            "decision": {
+                "status": "INSUFFICIENT_EVIDENCE",
+                "reference": None,
+                "independent_source_families": 1,
+                "new_exposure_allowed": False,
+                "advisory_exposure_multiplier": 0,
+                "reasons": ["STALE_YAHOO_OBSERVATION"],
+            },
+        }
+
+    monkeypatch.setattr(live, "_fetch_symbol", fake_fetch)
+    live.clear_live_cache()
+    snapshot = client.get("/v1/live/snapshot?refresh=true").json()
+    assert snapshot["provider_status"] == "STALE"
     live.clear_live_cache()
 
 
@@ -123,12 +173,23 @@ def test_response_security_and_health():
     response = client.get("/v1/demo/scenarios")
     assert response.headers["cache-control"] == "no-store"
 
+    readiness = client.get("/health/ready")
+    assert readiness.status_code in {200, 503}
+    assert readiness.json()["market_health"]["status"] in {"STARTING", "DEGRADED", "HEALTHY", "OFFLINE"}
+
 
 def test_static_dashboard_csp_allows_next_bootstrap_scripts():
     response = client.get("/")
     assert response.status_code == 200
     assert "<script>" in response.text
     assert "script-src 'self' 'unsafe-inline'" in response.headers["content-security-policy"]
+
+
+def test_static_dashboard_serves_exported_nested_routes():
+    response = client.get("/markets/")
+    assert response.status_code == 200
+    assert "MarketBridge" in response.text
+    assert client.head("/markets/").status_code == 200
 
 
 def test_shadow_snapshot_and_mochatrade_mark_adapter(monkeypatch):
@@ -153,3 +214,27 @@ def test_shadow_snapshot_and_mochatrade_mark_adapter(monkeypatch):
     assert client.post(
         "/v1/integrations/mochatrade/market", json=future, headers={"X-MarketBridge-Key": "test-secret"}
     ).status_code == 422
+
+
+def test_same_origin_dashboard_can_connect_to_shadow_websocket():
+    with client.websocket_connect(
+        "/v1/shadow/ws", headers={"origin": "http://127.0.0.1:8000"}
+    ) as websocket:
+        message = websocket.receive_json()
+    assert message["type"] == "shadow_snapshot"
+
+
+def test_ml_status_and_evaluation_are_explicit_about_provenance():
+    status = client.get("/v1/ml/status")
+    assert status.status_code == 200
+    body = status.json()
+    assert body["enabled"] is True
+    assert body["model_version"] == "marketbridge-ai-v0.3"
+    assert body["data_mode"] == "SYNTHETIC_CALIBRATION_DEMO"
+    assert body["risk_signal_enforced"] is False
+
+    evaluation = client.get("/v1/ml/evaluation")
+    assert evaluation.status_code == 200
+    report = evaluation.json()
+    assert report["data_mode"] == "SYNTHETIC_CALIBRATION_DEMO"
+    assert "Do not present synthetic MAE" in report["claim_boundary"]

@@ -38,6 +38,33 @@ SCENARIO_DESCRIPTIONS = {
         "An 18% genuine synthetic drop appears only through one original family and its reseller.",
         "Remain abstained: a reseller and repeated prints do not create independent corroboration.",
     ),
+    "clock-skew": (
+        "Future-dated observation",
+        "At second 25, one stock observation claims an event time ten seconds in the future.",
+        "Reject the impossible clock ordering without moving the defended reference.",
+    ),
+    "crossed-market": (
+        "Crossed market",
+        "At second 25, one observation carries a bid above its ask.",
+        "Reject the malformed market representation before it reaches consensus.",
+    ),
+    "replayed-tick": (
+        "Replayed stale tick",
+        "At second 25, a source replays an event older than its previously accepted update.",
+        "Reject the rewind and preserve receipt-ordered state.",
+    ),
+    "overnight-collapse": (
+        "Overnight source collapse",
+        "All stock witnesses disappear after second 20 while the broad factor continues, then recover at 44.",
+        "Widen uncertainty, block exposure after the freshness limit, and recover only on fresh evidence.",
+    ),
+}
+
+DERIVED_SCENARIOS = {
+    "clock-skew": "normal",
+    "crossed-market": "normal",
+    "replayed-tick": "normal",
+    "overnight-collapse": "dropout",
 }
 
 
@@ -50,13 +77,28 @@ def load_fixture(scenario_id: str, symbol: str) -> list[dict]:
         raise ValueError(f"Unknown scenario: {scenario_id}")
     if symbol not in SYMBOLS:
         raise ValueError(f"Unsupported symbol: {symbol}")
+    fixture_id = DERIVED_SCENARIOS.get(scenario_id, scenario_id)
     rows = [
         json.loads(line)
-        for line in (fixture_root() / f"{scenario_id}-{symbol}.jsonl").read_text().splitlines()
+        for line in (fixture_root() / f"{fixture_id}-{symbol}.jsonl").read_text().splitlines()
         if line
     ]
     if not rows or rows[0].get("data_mode") != DATA_MODE:
         raise ValueError("Only explicitly synthetic fixtures are permitted")
+    if scenario_id in DERIVED_SCENARIOS:
+        for row in rows:
+            if row.get("kind") == "metadata":
+                row["scenario_id"] = scenario_id
+            if fixture_id in str(row.get("id", "")):
+                row["id"] = str(row["id"]).replace(fixture_id, scenario_id, 1)
+            if row.get("kind") != "observation" or row.get("source_id") != "iex" or row.get("received_at") != 25:
+                continue
+            if scenario_id == "clock-skew":
+                row["event_time"] = row["received_at"] + 10
+            elif scenario_id == "crossed-market":
+                row["bid"] = row["ask"] + 1
+            elif scenario_id == "replayed-tick":
+                row["event_time"] = row["received_at"] - 10
     return rows
 
 

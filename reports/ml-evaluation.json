@@ -1,0 +1,59 @@
+{
+  "model_version": "marketbridge-ai-v0.3",
+  "data_mode": "SYNTHETIC_CALIBRATION_DEMO",
+  "training_source": "deterministic synthetic market regimes",
+  "fair_value": {
+    "NVDA": {
+      "rows": 1000,
+      "selected_model": "ridge",
+      "ridge_validation_mae_bps": 26.897,
+      "boosting_validation_mae_bps": 38.06,
+      "selected_test_mae_bps": 24.249,
+      "static_beta_test_mae_bps": 27.8,
+      "residual_p95_bps": 66.377
+    },
+    "TSLA": {
+      "rows": 1000,
+      "selected_model": "ridge",
+      "ridge_validation_mae_bps": 28.293,
+      "boosting_validation_mae_bps": 36.024,
+      "selected_test_mae_bps": 23.86,
+      "static_beta_test_mae_bps": 26.566,
+      "residual_p95_bps": 72.343
+    },
+    "AAPL": {
+      "rows": 1000,
+      "selected_model": "ridge",
+      "ridge_validation_mae_bps": 24.423,
+      "boosting_validation_mae_bps": 27.966,
+      "selected_test_mae_bps": 24.115,
+      "static_beta_test_mae_bps": 25.715,
+      "residual_p95_bps": 63.742
+    },
+    "MSFT": {
+      "rows": 1000,
+      "selected_model": "ridge",
+      "ridge_validation_mae_bps": 23.249,
+      "boosting_validation_mae_bps": 29.139,
+      "selected_test_mae_bps": 22.779,
+      "static_beta_test_mae_bps": 25.618,
+      "residual_p95_bps": 59.402
+    },
+    "AMD": {
+      "rows": 1000,
+      "selected_model": "ridge",
+      "ridge_validation_mae_bps": 26.714,
+      "boosting_validation_mae_bps": 34.906,
+      "selected_test_mae_bps": 26.329,
+      "static_beta_test_mae_bps": 30.421,
+      "residual_p95_bps": 61.041
+    }
+  },
+  "anomaly": {
+    "accuracy": 0.963,
+    "precision": 1.0,
+    "recall": 0.8882,
+    "false_positive_rate": 0.0
+  },
+  "claim_boundary": "Metrics are synthetic functional calibration unless data_mode is explicitly HISTORICAL_RESEARCH. Do not present synthetic MAE as live-market performance."
+}

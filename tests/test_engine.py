@@ -10,7 +10,7 @@ import pytest
 from marketbridge.engine import Engine
 from marketbridge.evaluation import evaluate_all, evaluate_trace
 from marketbridge.models import PaperAccount, SYMBOLS
-from marketbridge.scenarios import SCENARIO_DESCRIPTIONS, list_scenarios, load_fixture, run_scenario
+from marketbridge.scenarios import DERIVED_SCENARIOS, SCENARIO_DESCRIPTIONS, list_scenarios, load_fixture, run_scenario
 
 
 def observation(source="iex", time=0, price=182.5, **overrides):
@@ -278,8 +278,8 @@ def test_common_ex_post_outcome_scores_liability_while_reference_abstains():
 def test_evaluation_summary_counts_cases_and_not_individual_assertions():
     report = evaluate_all()
     assert report["evaluation_kind"] == "synthetic_functional_tests"
-    assert report["summary"] == {"total": 12, "passed": 12, "failed": 0}
-    assert len(report["cases"]) == 12
+    assert report["summary"] == {"total": 20, "passed": 20, "failed": 0}
+    assert len(report["cases"]) == 20
     assert sum(len(case["metrics"]["checks"]) for case in report["cases"]) > 12
 
 
@@ -297,6 +297,8 @@ def test_committed_fixture_generator_reproduces_every_payload_without_writing():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     for scenario in SCENARIO_DESCRIPTIONS:
+        if scenario in DERIVED_SCENARIOS:
+            continue
         for symbol in SYMBOLS:
             assert module.generate(scenario, symbol) == load_fixture(scenario, symbol)
 

@@ -33,11 +33,13 @@ export default function TradingChart({
   endTime,
   ariaLabel,
   height = 310,
+  theme = "light",
 }: {
   series: ChartSeries[];
   endTime?: string;
   ariaLabel: string;
   height?: number;
+  theme?: "light" | "dark";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -50,20 +52,20 @@ export default function TradingChart({
       autoSize: true,
       height,
       layout: {
-        background: { type: ColorType.Solid, color: "#ffffff" },
-        textColor: "#7b879b",
-        fontFamily: "Avenir Next, Avenir, Trebuchet MS, sans-serif",
+        background: { type: ColorType.Solid, color: theme === "dark" ? "#0d1116" : "#ffffff" },
+        textColor: theme === "dark" ? "#74808c" : "#7b879b",
+        fontFamily: "Geist, Inter, system-ui, sans-serif",
         fontSize: 11,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "#f3f5f8" },
-        horzLines: { color: "#edf0f5", style: LineStyle.Dashed },
+        vertLines: { color: theme === "dark" ? "#171d24" : "#f3f5f8" },
+        horzLines: { color: theme === "dark" ? "#202730" : "#edf0f5", style: LineStyle.Dashed },
       },
       crosshair: { mode: CrosshairMode.Normal },
-      rightPriceScale: { borderColor: "#e4e8ef", scaleMargins: { top: 0.12, bottom: 0.12 } },
+      rightPriceScale: { borderColor: theme === "dark" ? "#242a32" : "#e4e8ef", scaleMargins: { top: 0.12, bottom: 0.12 } },
       timeScale: {
-        borderColor: "#e4e8ef",
+        borderColor: theme === "dark" ? "#242a32" : "#e4e8ef",
         timeVisible: true,
         secondsVisible: true,
         rightOffsetPixels: 8,
@@ -79,7 +81,7 @@ export default function TradingChart({
       chartRef.current = null;
       seriesRef.current.clear();
     };
-  }, [height]);
+  }, [height, theme]);
 
   useEffect(() => {
     const chart = chartRef.current;

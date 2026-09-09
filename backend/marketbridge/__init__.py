@@ -1,4 +1,4 @@
-"""MarketBridge deterministic synthetic reference and advisory simulator."""
+"""MarketBridge mark-integrity, learned fair-value and advisory risk engine."""
 
 from .evaluation import evaluate_all
 from .scenarios import list_scenarios, run_scenario

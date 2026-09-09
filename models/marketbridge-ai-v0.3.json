@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "model_version": "marketbridge-ai-v0.3",
+  "data_mode": "SYNTHETIC_CALIBRATION_DEMO",
+  "trained_at": "2026-09-08T11:04:43.141085Z",
+  "training_source": "deterministic synthetic market regimes",
+  "fair_value": {
+    "feature_names": [
+      "qqq_return_bps",
+      "spy_return_bps",
+      "soxx_return_bps",
+      "single_source_return_bps",
+      "minutes_since_anchor",
+      "source_age_ms",
+      "provider_count",
+      "venue_count"
+    ],
+    "models": {
+      "NVDA": {
+        "type": "ridge",
+        "feature_names": [
+          "qqq_return_bps",
+          "spy_return_bps",
+          "soxx_return_bps",
+          "single_source_return_bps",
+          "minutes_since_anchor",
+          "source_age_ms",
+          "provider_count",
+          "venue_count"
+        ],
+        "means": [
+          -6.2875479372373135,
+          -5.306626323512819,
+          -5.74341928693655,
+          -11.586730412067261,
+          433.2001897610022,
+          959.2101062377664,
+          1.7685714285714285,
+          1.9957142857142858
+        ],
+        "scales": [
+          72.78933176493084,
+          58.72299907230767,
+          91.15669416126039,
+          121.50439929698265,
+          256.14793311413206,
+          951.1385590831879,
+          0.7488167536936156,
+          0.7201062846722627
+        ],
+        "coefficients": [
+          45.57007023711882,
+          23.62254426850844,
+          26.78781041823506,
+          23.391165828236,
+          -1.9284588380239736,
+          0.21058447586438198,
+          0.3871485727683112,
+          0.973386463134089
+        ],
+        "intercept": -11.349489264390737,
+        "validation_mae_bps": 26.896953608912966,
+        "test_mae_bps": 24.248742839047143,
+        "residual_p90_bps": 54.01190833682547,
+        "residual_p95_bps": 66.3767236333206,
+        "max_abs_return_bps": 1500.0
+      },
+      "TSLA": {
+        "type": "ridge",
+        "feature_names": [
+          "qqq_return_bps",
+          "spy_return_bps",
+          "soxx_return_bps",
+          "single_source_return_bps",
+          "minutes_since_anchor",
+          "source_age_ms",
+          "provider_count",
+          "venue_count"
+        ],
+        "means": [
+          -3.3109105241354473,
+          -2.864143249090504,
+          -6.894511056630366,
+          -0.5308923770288578,
+          446.9818239656045,
+          935.5412792119511,
+          1.772857142857143,
+          1.9857142857142858
+        ],
+        "scales": [
+          74.86736612947531,
+          61.74426378563248,
+          96.28468524202306,
+          113.50181315711306,
+          264.491232016913,
+          1002.0000582305773,
+          0.741508390969078,
+          0.6947323666164473
+        ],
+        "coefficients": [
+          43.91109298400723,
+          23.773260442900376,
+          22.82613492809707,
+          22.08911515906753,
+          -0.5508158872450168,
+          0.4975384253811601,
+          1.01747431256368,
+          -0.0432400674860195
+        ],
+        "intercept": -5.934186690597344,
+        "validation_mae_bps": 28.293396169069833,
+        "test_mae_bps": 23.86000190955461,
+        "residual_p90_bps": 55.11804728345705,
+        "residual_p95_bps": 72.34285614280111,
+        "max_abs_return_bps": 1500.0
+      },
+      "AAPL": {
+        "type": "ridge",
+        "feature_names": [
+          "qqq_return_bps",
+          "spy_return_bps",
+          "soxx_return_bps",
+          "single_source_return_bps",
+          "minutes_since_anchor",
+          "source_age_ms",
+          "provider_count",
+          "venue_count"
+        ],
+        "means": [
+          0.9118903309190599,
+          1.345759276192657,
+          2.3383919351022575,
+          4.516043248987486,
+          441.12901112720107,
+          950.3529993684273,
+          1.7642857142857142,
+          1.9985714285714287
+        ],
+        "scales": [
+          74.84553380173972,
+          60.949442952474975,
+          96.82152165014152,
+          98.62568613388717,
+          265.550693419038,
+          957.5664005571697,
+          0.7426854197121828,
+          0.7299692473254037
+        ],
+        "coefficients": [
+          35.27769666872735,
+          16.62755979513133,
+          24.350507564966342,
+          13.89362664488367,
+          0.32931813186687725,
+          1.3521947584874576,
+          1.4000448891829778,
+          -0.8303962035402662
+        ],
+        "intercept": 0.9305246927002634,
+        "validation_mae_bps": 24.42306950358452,
+        "test_mae_bps": 24.115272338116764,
+        "residual_p90_bps": 47.35973164633886,
+        "residual_p95_bps": 63.74190697689922,
+        "max_abs_return_bps": 1500.0
+      },
+      "MSFT": {
+        "type": "ridge",
+        "feature_names": [
+          "qqq_return_bps",
+          "spy_return_bps",
+          "soxx_return_bps",
+          "single_source_return_bps",
+          "minutes_since_anchor",
+          "source_age_ms",
+          "provider_count",
+          "venue_count"
+        ],
+        "means": [
+          -3.476955664071012,
+          -1.8559559814648392,
+          -2.6295358186241002,
+          -6.304570415955868,
+          446.8098196462783,
+          871.5620159786596,
+          1.812857142857143,
+          2.02
+        ],
+        "scales": [
+          75.79165438746679,
+          62.751935538897,
+          98.97363730204201,
+          97.95072498401044,
+          261.6009207404649,
+          859.7292175799234,
+          0.7411229758320291,
+          0.6758275350582108
+        ],
+        "coefficients": [
+          31.145984683359185,
+          20.88423587058019,
+          19.130651328960912,
+          14.37377226639669,
+          0.0391909343164614,
+          -0.6831071936885892,
+          -0.635486418522417,
+          0.5512211398369938
+        ],
+        "intercept": -6.04923867431393,
+        "validation_mae_bps": 23.249454333640145,
+        "test_mae_bps": 22.77890162429089,
+        "residual_p90_bps": 50.641547543953834,
+        "residual_p95_bps": 59.40223733454856,
+        "max_abs_return_bps": 1500.0
+      },
+      "AMD": {
+        "type": "ridge",
+        "feature_names": [
+          "qqq_return_bps",
+          "spy_return_bps",
+          "soxx_return_bps",
+          "single_source_return_bps",
+          "minutes_since_anchor",
+          "source_age_ms",
+          "provider_count",
+          "venue_count"
+        ],
+        "means": [
+          -1.009640585801723,
+          -1.7870361608760958,
+          0.7142601330631568,
+          -0.5491041617277381,
+          445.24650386956995,
+          908.8677587434814,
+          1.8,
+          1.9728571428571429
+        ],
+        "scales": [
+          75.62215717163339,
+          61.408654970286555,
+          96.15296072103031,
+          118.87239659103278,
+          256.513511795782,
+          930.5086801114046,
+          0.7445036697597361,
+          0.6974282202843384
+        ],
+        "coefficients": [
+          42.58352211451311,
+          25.206403970598323,
+          24.9378586863526,
+          24.30851650718553,
+          -1.3297234538269413,
+          -0.2320114041169063,
+          -0.6856037336062315,
+          0.511628366371399
+        ],
+        "intercept": 0.0037515082379494585,
+        "validation_mae_bps": 26.713710596946353,
+        "test_mae_bps": 26.329096666313934,
+        "residual_p90_bps": 51.32159462742587,
+        "residual_p95_bps": 61.040708703470656,
+        "max_abs_return_bps": 1500.0
+      }
+    },
+    "static_beta_baseline": {
+      "NVDA": 1.45,
+      "TSLA": 1.3,
+      "AAPL": 1.05,
+      "MSFT": 1.0,
+      "AMD": 1.35
+    }
+  },
+  "anomaly": {
+    "feature_names": [
+      "mark_divergence_bps",
+      "dispersion_bps",
+      "source_age_ms",
+      "provider_count",
+      "venue_count",
+      "status_estimated"
+    ],
+    "model": {
+      "type": "logistic_regression",
+      "feature_names": [
+        "mark_divergence_bps",
+        "dispersion_bps",
+        "source_age_ms",
+        "provider_count",
+        "venue_count",
+        "status_estimated"
+      ],
+      "means": [
+        232.43097272739914,
+        45.44981444056096,
+        1312.9385943962232,
+        1.9595,
+        2.1855,
+        0.2625
+      ],
+      "scales": [
+        339.673217850558,
+        78.20443232101421,
+        1775.9659594279565,
+        0.7157930916123737,
+        0.5963134662239316,
+        0.43999289766995103
+      ],
+      "coefficients": [
+        3.1497994012278707,
+        0.7731780876214271,
+        0.5495228836953693,
+        0.18242399888262392,
+        -0.32642298160854105,
+        -0.33133167281478
+      ],
+      "intercept": -0.4939498608073607
+    },
+    "evaluation": {
+      "accuracy": 0.963,
+      "precision": 1.0,
+      "recall": 0.8882175226586103,
+      "false_positive_rate": 0.0
+    }
+  },
+  "limitations": [
+    "Direct independent market consensus always outranks the learned fair-value estimate.",
+    "The anomaly model can only tighten risk; it cannot approve a mark or loosen deterministic controls.",
+    "The bundled default is synthetic calibration data until retrained with historical research data.",
+    "Model confidence is prototype calibration, not a production liquidation guarantee."
+  ]
+}

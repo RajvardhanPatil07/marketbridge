@@ -47,29 +47,36 @@ If evidence becomes weak, MarketBridge can return `GUARDED`, `RESTRICTED`, or `H
 
 ---
 
-## What changed in v0.2
+## What changed in v0.3
 
 ### ⚡ Lower-latency streaming
 
 - Alpaca WebSocket adapter for live venue-labelled stock trades.
+- Databento EQUS.MINI MBP-1 live adapter and entitlement-gated historical importer.
 - Optional Hyperliquid active-asset-context observer.
 - WebSocket-first browser transport with SSE fallback.
 - The old fixed 100 ms SSE polling loop has been removed.
 - The engine wakes subscribers when a new decision exists.
-- Database/file audit writes remain outside the decision timer.
+- JSONL plus DuckDB audit writes remain outside the decision timer, with Parquet export for research.
 - Browser updates are coalesced to avoid unnecessary React renders.
 
-### 🧠 Better price-quality logic
+### 🧠 AI-assisted fair value and anomaly detection
 
 - Provider family and venue family are tracked separately.
 - Two venues delivered through one provider are no longer treated as fully independent infrastructure.
-- Direct multi-venue consensus remains the highest-trust reference.
-- A QQQ factor fallback can emit an explicitly labelled `ESTIMATED` reference after a stock has a trusted anchor.
-- The fallback is intentionally conservative and **is not presented as a trained production model**.
+- Direct multi-venue consensus remains the highest-trust reference and **always outranks AI**.
+- A learned fair-value layer compares Ridge Regression with Gradient-Boosted Regression Stumps per stock and automatically selects the lower-validation-error model.
+- The model uses QQQ, SPY and SOXX factor moves plus evidence quality and time-since-anchor features.
+- A separate learned anomaly classifier scores the venue mark against the independent MarketBridge reference.
+- AI can provide an explicitly labelled `ESTIMATED` fallback and confidence band, but it never creates a trusted anchor.
+- AI can only tighten risk after non-synthetic calibration; it can never loosen deterministic controls.
+- The checked-in model bundle is deliberately labelled `SYNTHETIC_CALIBRATION_DEMO`. Its metrics are functional calibration, **not live-market performance**.
 - Confidence band, confidence score, risk state, maximum leverage and maximum notional multiplier are returned with each decision.
 
 ### 🛡️ Security improvements
 
+- Every issued decision includes a `marketbridge-passport-v1` receipt with sealed claims, per-observation evidence hashes and a per-symbol predecessor link.
+- Passport content and chain hashes use canonical JSON plus SHA-256, making later claim changes detectable without retaining or redistributing raw provider payloads.
 - HMAC-SHA256 signed Mochatrade integration requests.
 - Timestamp-expiry checks.
 - Nonce replay protection.
@@ -82,7 +89,37 @@ If evidence becomes weak, MarketBridge can return `GUARDED`, `RESTRICTED`, or `H
 
 ### 📊 New live frontend
 
-The Live page uses a dense market-information layout inspired by financial market dashboards such as CoinMarketCap, while keeping MarketBridge's own visual identity.
+The Next.js 16 frontend is a route-based financial terminal. It uses React 19, TypeScript, Lucide icons, and TradingView Lightweight Charts, with a shared WebSocket-first market-data context and SSE fallback. The build remains a static export that FastAPI serves same-origin in production.
+
+Main product routes:
+
+| Route | Purpose |
+|---|---|
+| `/` | Concise product entry and live market monitor. |
+| `/markets` | Market rankings, movement, reference quality, and category navigation. |
+| `/markets/stocks`, `/markets/crypto`, `/markets/etfs` | Asset-class views; unavailable providers are shown explicitly instead of populated with sample listings. |
+| `/asset/[symbol]` | Price chart, supported market metrics, deterministic risk explanation, and compact AI insight. |
+| `/screener` | Filters over the fields currently provided by the backend. |
+| `/terminal` | Watchlist, primary chart, advisory paper order ticket, positions boundary, and risk monitor. |
+| `/portfolio` | Account/positions shell that stays empty until a server-side paper brokerage ledger is connected. |
+| `/news` | Ticker-linked Marketaux financial news, fetched through the backend so its token stays private. |
+| `/watchlist` | Device-local supported-asset watchlist. |
+| `/insights` | Learned-model signal, provenance, and links into research workflows. |
+| `/lab` | Existing scenario replay, incident reconstruction, live evidence console, and evaluation tools. |
+
+The terminal UI uses a restrained dark design system with thin separators, compact controls, tabular numerals, and green/red reserved for financial movement. Large tables scroll horizontally on mobile; secondary columns and panes collapse before core price, chart, risk, and action information.
+
+Market data flows through the security boundary below:
+
+```text
+Next.js UI → MarketBridge REST/WebSocket/SSE API → server-side providers
+```
+
+The browser never connects with Alpaca, Databento, or Mochatrade secrets. `NEXT_PUBLIC_API_BASE` may contain only the public MarketBridge API origin for split local development; provider credentials use backend-only variables documented below.
+
+Marketaux news uses the same boundary. Set `MARKETAUX_API_TOKEN` only in the backend environment; `/v1/news` returns a normalized three-article feed cached for five minutes to protect the free request allowance.
+
+The live surfaces show:
 
 It now shows:
 
@@ -97,6 +134,9 @@ It now shows:
 - Recommended leverage.
 - Provider/venue evidence counts.
 - Source evidence details.
+- Interactive evidence-to-reference-to-risk lineage graph.
+- Uncertainty thermostat that makes confidence-driven restriction visible.
+- Hash-chained Mark Passport receipts.
 - Per-asset reference/mark/band chart.
 - Responsive mobile market cards.
 
@@ -105,31 +145,46 @@ It now shows:
 ## Architecture
 
 ```text
- Alpaca WS             Optional Hyperliquid WS          Research feed
-     │                           │                           │
-     └──────────────┬────────────┴──────────────┬────────────┘
+ Alpaca WS       Databento EQUS.MINI      Hyperliquid mark       Research feed
+     │                    │                       │                    │
+     └──────────────┬─────┴───────────────────────┴──────────────┬─────┘
                     ▼                           ▼
               Normalization              Provider health
                     │
                     ▼
-          In-memory evidence state
+             Evidence firewall
                     │
-          ┌─────────┼─────────┐
-          ▼         ▼         ▼
-      consensus   confidence  factor fallback
-          └─────────┼─────────┘
-                    ▼
-                Risk policy
-                    │
-          ┌─────────┴────────────┐
-          ▼                      ▼
-  WebSocket / SSE           async audit log
-          │
-          ▼
-      Next.js UI
+          ┌─────────┴───────────────┐
+          ▼                         ▼
+  Direct consensus         Learned fair value
+   (highest trust)          (ESTIMATED only)
+          │                         │
+          └────────────┬────────────┘
+                       ▼
+                Confidence band
+                       │
+            Venue mark comparison
+                       │
+                 ML anomaly score
+                       │
+                       ▼
+             Deterministic risk policy
+             (AI may only tighten)
+                       │
+             ┌─────────┴──────────┐
+             ▼                    ▼
+     WebSocket / SSE         async audit log
+             │
+             ▼
+         Next.js UI
 ```
 
 The hot decision path does **not** wait for a database or JSONL write.
+
+The synthetic Chaos Lab contains ten deterministic regimes: normal, poisoned print, corroborated
+repricing, feed dropout, verified reopening, correlated single-source failure, future clock skew,
+crossed market, replayed stale tick, and overnight source collapse. It reports detection time,
+bad-mark exposure and false-freeze seconds alongside availability and error.
 
 ---
 
@@ -152,6 +207,37 @@ These thresholds are **prototype advisory policy**, not Mochatrade's production 
 
 ---
 
+## 🤖 AI / ML model
+
+MarketBridge intentionally uses ML **inside** the pricing/risk stack rather than adding an LLM chatbot.
+
+The learned fair-value model predicts the stock return from the last trusted anchor using factor moves and evidence-quality features. The trainer evaluates **Ridge Regression vs Gradient-Boosted Regression Stumps** for each symbol and exports the best validation model to a small JSON bundle. A separate logistic classifier estimates the probability that the trading venue mark is anomalous.
+
+The safety boundary is strict:
+
+```text
+Direct independent consensus > learned estimate > no reference
+```
+
+A learned estimate is always `ESTIMATED`, never `QUALIFIED`. A model prediction cannot turn itself into the next trusted anchor, cannot create source independence, and cannot loosen a deterministic risk restriction.
+
+### Checked-in model provenance
+
+The default `models/marketbridge-ai-v0.3.json` is trained on deterministic synthetic calibration regimes so the full system works offline. `reports/ml-evaluation.json` therefore **must not be presented as historical market performance**.
+
+To create a real research backtest before the hackathon:
+
+```bash
+make build-ml-dataset
+uv run python scripts/train_ai_models.py \
+  --csv data/ml_training.csv \
+  --data-mode HISTORICAL_RESEARCH
+```
+
+Then use the new held-out metrics from `reports/ml-evaluation.json`. See [`docs/AI_MODEL.md`](docs/AI_MODEL.md) for the model design and claim boundary.
+
+---
+
 ## Live data
 
 ### Alpaca
@@ -161,10 +247,37 @@ Set backend-only credentials:
 ```bash
 export ALPACA_API_KEY="..."
 export ALPACA_SECRET_KEY="..."
-export ALPACA_FEED="iex"
+export ALPACA_FEED="sip"
 ```
 
-`iex` is the safe default for a normal free account. Use `sip`, `boats`, or `overnight` only when your account is entitled to that feed.
+`iex` remains useful for free-account development, but it contains only one exchange and therefore cannot satisfy MarketBridge's two-venue qualification rule by itself. Use `sip` only when the account is entitled to current SIP data. The adapter now waits for explicit authentication and subscription acknowledgements, labels non-multi-venue feeds `LIMITED`, rejects odd-lot (`I`) trades by default, deduplicates and orders trades per venue, and rejects extreme trades against a fresh NBBO midpoint.
+
+Validate configuration without exposing credentials:
+
+```bash
+make live-check
+```
+
+The command exits `0` only when configuration is valid and the configured Alpaca feed can produce multi-venue evidence. Enable `MARKETBRIDGE_REQUIRE_LIVE_DATA=1` on the production backend to fail startup/readiness when that condition is not met. Keep it disabled for the offline safety-lab demo.
+
+### Databento
+
+Databento is an optional independent live/history source:
+
+```bash
+export DATABENTO_API_KEY="..."
+```
+
+The live adapter subscribes to `EQUS.MINI` `mbp-1`. Because that dataset is consolidated,
+MarketBridge deliberately counts it as one provider/venue witness—not as several exchanges.
+Access is subscription/entitlement gated. Historical data can be downloaded without silently
+substituting demo data:
+
+```bash
+uv run python scripts/import_databento.py \
+  --symbols NVDA TSLA --start 2026-08-01 --end 2026-08-02 \
+  --output data/databento/equs-mini.parquet
+```
 
 ### Hyperliquid
 
@@ -175,6 +288,7 @@ export HYPERLIQUID_COIN_MAP='{"NVDA":"xyz:NVDA","TSLA":"xyz:TSLA"}'
 ```
 
 Hyperliquid/Mochatrade marks are treated as **venue marks to compare against**. They are not used as independent evidence to prove themselves correct.
+Venue marks become `STALE` after 30 seconds by default and are then excluded from divergence and anomaly calculations. Override with `MARKETBRIDGE_VENUE_MARK_TTL_SECONDS` if the venue contract requires a different heartbeat.
 
 ### Yahoo Finance
 
@@ -222,9 +336,15 @@ make verify
 make evaluate
 make replay
 make benchmark-shadow
+make live-check
+make e2e
+make train-ai
+uv run python scripts/export_evidence.py
+# optional, needs internet for Yahoo research history:
+make build-ml-dataset
 ```
 
-Backend tests cover the deterministic guard, API validation, research-feed exclusion and shadow-oracle behavior. The project also includes synthetic incident/replay fixtures so the demo remains usable when live market connectivity is unavailable.
+Backend tests cover deterministic guards, API validation, research-feed exclusion, learned fair-value fallback, AI provenance, anomaly scoring, tamper-evident mark-passport chaining, DuckDB/Parquet persistence and Hypothesis-generated safety invariants. Prometheus metrics are exposed at `/metrics`. The project also includes synthetic incident/replay fixtures so the demo remains usable when live market connectivity is unavailable.
 
 Important: the microsecond in-process benchmark is **not** end-to-end market latency. The UI reports source-event age separately from internal decision latency.
 
@@ -236,9 +356,12 @@ Important: the microsecond in-process benchmark is **not** end-to-end market lat
 |---|---|
 | `GET /health` | Service status |
 | `GET /health/live` | Process liveness |
-| `GET /health/ready` | Pipeline readiness |
-| `GET /health/feeds` | Provider health |
+| `GET /health/ready` | Process + strict live-data readiness |
+| `GET /health/feeds` | Provider freshness, configuration and market health |
+| `GET /metrics` | Prometheus decision, latency, freshness and divergence metrics |
 | `GET /v1/shadow/snapshot` | Latest market/risk snapshot |
+| `GET /v1/ml/status` | Loaded AI model provenance and safety boundary |
+| `GET /v1/ml/evaluation` | Latest offline ML evaluation report |
 | `GET /v1/shadow/stream` | Event-driven SSE fallback |
 | `WS /v1/shadow/ws` | Primary live browser stream |
 | `POST /v1/shadow/refresh` | Refresh research observations |
@@ -318,7 +441,7 @@ Do not expose Alpaca or HMAC secrets as `NEXT_PUBLIC_*` variables.
 
 ## Honest scope
 
-MarketBridge v0.2 is a strong hackathon/pilot architecture, not a production exchange oracle.
+MarketBridge v0.3 is a strong hackathon/pilot architecture, not a production exchange oracle.
 
 It does **not** claim:
 
@@ -342,6 +465,8 @@ backend/marketbridge/
   security.py      HMAC, replay protection and rate limiting
   engine.py        deterministic synthetic safety engine
   live.py          research-only market observations
+  evidence_store.py DuckDB and Parquet analytical evidence storage
+  metrics.py       bounded-cardinality Prometheus instrumentation
 
 apps/web/src/
   components/      live market UI, incident lab and replay views

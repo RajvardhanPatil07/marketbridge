@@ -14,13 +14,15 @@ import time
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from .evaluation import evaluate_all
 from .incidents import incident_reconstruction
 from .live import get_live_snapshot
+from .news import TRACKED_NEWS_SYMBOLS, get_market_news
 from .scenarios import list_scenarios, run_scenario
 from .security import NonceStore, SignatureHeaders, SlidingWindowLimiter, verify_signature
 from .shadow import LivePipeline, TRACKED_SYMBOLS
@@ -35,7 +37,12 @@ ws_limiter = SlidingWindowLimiter(limit=20, window_seconds=60)
 
 def _allowed_origins() -> list[str]:
     configured = [item.strip() for item in os.environ.get("MARKETBRIDGE_ALLOWED_ORIGINS", "").split(",") if item.strip()]
-    return configured or ["http://localhost:3000", "http://127.0.0.1:3000"]
+    return configured or [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
 
 
 ALLOWED_ORIGINS = _allowed_origins()
@@ -52,7 +59,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="MarketBridge API",
-    version="0.2.0",
+    version="0.3.0",
     description="Advisory mark-integrity, fair-value and dynamic-risk layer for 24/7 equity perpetuals.",
     lifespan=lifespan,
 )
@@ -96,10 +103,15 @@ async def security_headers(request: Request, call_next):
 def health():
     return {
         "status": "ok",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "data_modes": ["SYNTHETIC_TEST", "HISTORICAL_RECONSTRUCTION", "LIVE_RESEARCH", "SHADOW_ORACLE"],
         "web_ready": (WEB / "index.html").exists(),
     }
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/health/live")
@@ -109,13 +121,19 @@ def health_live():
 
 @app.get("/health/ready")
 def health_ready():
-    return {"status": "ready", "pipeline_started": pipeline.snapshot()["started"]}
+    readiness = pipeline.readiness()
+    return JSONResponse(status_code=200 if readiness["ready"] else 503, content=readiness)
 
 
 @app.get("/health/feeds")
 def health_feeds():
     snap = pipeline.snapshot()
-    return {"providers": snap["providers"], "generation": snap["generation"]}
+    return {
+        "providers": snap["providers"],
+        "generation": snap["generation"],
+        "market_health": snap["market_health"],
+        "configuration": snap["configuration"],
+    }
 
 
 @app.get("/v1/demo/scenarios")
@@ -162,9 +180,34 @@ def live_snapshot(refresh: bool = Query(default=False)):
     return get_live_snapshot(force=refresh)
 
 
+@app.get("/v1/news")
+def market_news(
+    symbol: str | None = Query(default=None, min_length=1, max_length=8, pattern="^[A-Za-z]+$"),
+):
+    normalized = symbol.upper() if symbol else None
+    if normalized and normalized not in TRACKED_NEWS_SYMBOLS:
+        raise HTTPException(status_code=404, detail="Unknown news symbol")
+    return get_market_news(symbol=normalized)
+
+
 @app.get("/v1/shadow/snapshot")
 def shadow_snapshot():
     return pipeline.snapshot()
+
+
+@app.get("/v1/ml/status")
+def ml_status():
+    """Return loaded model provenance and enforcement boundary."""
+    return pipeline.oracle.ai_status()
+
+
+@app.get("/v1/ml/evaluation")
+def ml_evaluation():
+    """Expose the latest offline ML evaluation artifact when present."""
+    path = ROOT / "reports" / "ml-evaluation.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Run scripts/train_ai_models.py first")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @app.post("/v1/shadow/refresh")
@@ -213,7 +256,7 @@ async def shadow_websocket(websocket: WebSocket):
 
 
 class MochatradeMarketEvent(BaseModel):
-    symbol: str = Field(pattern="^(NVDA|TSLA|AAPL|MSFT|AMD|QQQ)$")
+    symbol: str = Field(pattern="^(NVDA|TSLA|AAPL|MSFT|AMD)$")
     mark_price: float = Field(gt=0, lt=1_000_000)
     event_time: datetime
 
@@ -323,7 +366,7 @@ if (WEB / "_next").is_dir():
     app.mount("/_next", StaticFiles(directory=WEB / "_next"), name="next-assets")
 
 
-@app.get("/{asset_path:path}", include_in_schema=False)
+@app.api_route("/{asset_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 def dashboard(asset_path: str):
     if asset_path.startswith(("v1/", ".")):
         raise HTTPException(status_code=404, detail="Not found")
@@ -332,6 +375,9 @@ def dashboard(asset_path: str):
         raise HTTPException(status_code=404, detail="Not found")
     if target.is_file():
         return FileResponse(target)
+    directory_index = (target / "index.html").resolve()
+    if directory_index.is_relative_to(WEB) and directory_index.is_file():
+        return FileResponse(directory_index)
     if asset_path == "":
         return JSONResponse(
             status_code=503,

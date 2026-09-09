@@ -119,7 +119,7 @@ def evaluate_trace(scenario_id: str, steps: list[dict], truth: dict, outcome: fl
             and engine.recovery_seconds == 3,
             "An independent family at 27 admits the stock-specific move despite flat QQQ.",
         )
-    elif scenario_id == "dropout":
+    elif scenario_id in {"dropout", "overnight-collapse"}:
         check(
             "Freshness timers degrade state",
             steps[26]["quality"] == "CAUTION" and steps[31]["quality"] == "INSUFFICIENT_EVIDENCE",
@@ -150,6 +150,43 @@ def evaluate_trace(scenario_id: str, steps: list[dict], truth: dict, outcome: fl
             and steps[-1]["simulation"]["valuation_status"] == "UNRESOLVED",
             "The final common outcome reveals the held position's loss despite unresolved current valuation.",
         )
+    elif scenario_id == "clock-skew":
+        check(
+            "Future event rejected",
+            steps[25]["assessment"] == "REJECT"
+            and "MALFORMED_PRICE_TIMESTAMP_OR_REPRESENTATION" in steps[25]["reasons"],
+            "A future-dated source event cannot enter the reference.",
+        )
+    elif scenario_id == "crossed-market":
+        check(
+            "Crossed quote rejected",
+            steps[25]["assessment"] == "REJECT"
+            and "MALFORMED_PRICE_TIMESTAMP_OR_REPRESENTATION" in steps[25]["reasons"],
+            "A bid above ask cannot enter the reference.",
+        )
+    elif scenario_id == "replayed-tick":
+        check(
+            "Replayed event rejected",
+            steps[25]["assessment"] == "REJECT"
+            and "LATE_EVENT_CANNOT_REWIND_SOURCE" in steps[25]["reasons"],
+            "An older source event cannot rewind receipt-ordered state.",
+        )
+
+    detected = next(
+        (step["seconds"] for step in steps if step["assessment"] in {"REJECT", "QUARANTINE"}),
+        None,
+    )
+    bad_mark_exposure = sum(
+        abs(step["comparator"] / truth[step["seconds"]] - 1) * 10_000
+        for step in steps
+        if step["seconds"] in truth
+    )
+    false_freeze_seconds = sum(
+        step["reference"] is None
+        and step["seconds"] in truth
+        and abs(step["comparator"] / truth[step["seconds"]] - 1) * 10_000 <= 75
+        for step in steps
+    )
     return {
         "availability_pct": 100 * sum(s["reference"] is not None for s in steps) / len(steps),
         "quarantined_count": engine.quarantined_count,
@@ -159,6 +196,9 @@ def evaluate_trace(scenario_id: str, steps: list[dict], truth: dict, outcome: fl
         "baseline_mae_bps": baseline_mae,
         "final_equity": final_equity,
         "baseline_final_equity": baseline_final,
+        "time_to_detect_seconds": detected,
+        "bad_mark_exposure_bps_seconds": bad_mark_exposure,
+        "false_freeze_seconds": false_freeze_seconds,
         "policy_comparison": compare_policies(steps, truth),
         "checks": checks,
     }

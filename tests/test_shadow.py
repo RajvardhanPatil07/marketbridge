@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
+from copy import deepcopy
 
 import pytest
 
-from marketbridge.shadow import NormalizedObservation, ShadowOracle
+from marketbridge.shadow import VENUE_MARK_FRESH_SECONDS, NormalizedObservation, ShadowOracle
+from marketbridge.shadow import LivePipeline
 
 
 NOW = datetime(2026, 9, 7, 12, 0, tzinfo=timezone.utc)
@@ -40,6 +42,15 @@ def test_two_fresh_original_venues_can_qualify_a_reference():
     assert decision["decision_latency_ms"] < 10
 
 
+def test_databento_bbo_is_one_aggregated_provider_witness():
+    observation = LivePipeline._normalized_databento_bbo("NVDA", 199.9, 200.1, NOW, NOW)
+    assert observation is not None
+    assert observation.price == 200
+    assert observation.provider == "databento"
+    assert observation.venue_key == "databento-equs-mini"
+    assert LivePipeline._normalized_databento_bbo("NVDA", 201, 200, NOW, NOW) is None
+
+
 def test_venue_mark_immediately_annotates_current_decision_and_audit_log():
     audited = []
     oracle = ShadowOracle(audited.append)
@@ -47,7 +58,7 @@ def test_venue_mark_immediately_annotates_current_decision_and_audit_log():
     oracle.ingest(observation(200.04, "equity-venue:V", "V"))
 
     oracle.update_venue_mark("NVDA", 201.02, NOW)
-    snapshot = oracle.snapshot()
+    snapshot = oracle.snapshot(now=NOW)
     decision = snapshot["decisions"][0]
 
     assert decision["venue_mark"]["price"] == 201.02
@@ -55,6 +66,46 @@ def test_venue_mark_immediately_annotates_current_decision_and_audit_log():
     assert decision["reasons"][-1] == "VENUE_MARK_OBSERVED"
     assert snapshot["decision_log"][0] == decision
     assert audited[-1] == decision
+
+
+def test_mark_passports_are_hash_chained_and_tamper_evident():
+    oracle = ShadowOracle()
+    first = oracle.ingest(observation(200.00, "equity-venue:Q", "Q"))
+    second = oracle.ingest(observation(200.04, "equity-venue:V", "V"))
+
+    assert first["passport"]["sequence"] == 1
+    assert first["passport"]["previous_hash"] is None
+    assert second["passport"]["sequence"] == 2
+    assert second["passport"]["previous_hash"] == first["passport"]["chain_hash"]
+    assert len(second["passport"]["claims"]["evidence"]) == 2
+    assert all(len(item["evidence_hash"]) == 64 for item in second["passport"]["claims"]["evidence"])
+    assert ShadowOracle.verify_passport(second["passport"]) is True
+
+    tampered = deepcopy(second["passport"])
+    tampered["claims"]["risk_state"] = "HALTED"
+    assert ShadowOracle.verify_passport(tampered) is False
+
+    oracle.update_venue_mark("NVDA", 185.0, NOW)
+    marked = oracle.snapshot(now=NOW)["decisions"][0]
+    assert marked["passport"]["sequence"] == 3
+    assert marked["passport"]["previous_hash"] == second["passport"]["chain_hash"]
+    assert marked["passport"]["claims"]["risk_state"] == "HALTED"
+    assert ShadowOracle.verify_passport(marked["passport"]) is True
+
+
+def test_stale_venue_mark_is_visible_but_not_used_for_divergence():
+    oracle = ShadowOracle()
+    oracle.ingest(observation(200.00, "equity-venue:Q", "Q"))
+    oracle.ingest(observation(200.04, "equity-venue:V", "V"))
+    oracle.update_venue_mark("NVDA", 201.02, NOW)
+
+    snapshot = oracle.snapshot(now=NOW + timedelta(seconds=VENUE_MARK_FRESH_SECONDS + 1))
+    decision = snapshot["decisions"][0]
+
+    assert decision["venue_mark"]["fresh"] is False
+    assert decision["venue_mark"]["age_seconds"] == VENUE_MARK_FRESH_SECONDS + 1
+    assert decision["mark_divergence_bps"] is None
+    assert "VENUE_MARK_STALE" in decision["reasons"]
 
 
 def test_disagreeing_or_stale_venues_do_not_qualify():

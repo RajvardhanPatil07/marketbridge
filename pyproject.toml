@@ -1,12 +1,25 @@
 [project]
 name = "marketbridge-demo"
-version = "0.2.0"
-description = "Deterministic off-hours reference and source-quality demonstration"
+version = "0.3.0"
+description = "AI-assisted mark-integrity and dynamic-risk layer for 24/7 equity perpetuals"
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "yfinance>=0.2.66,<1", "websockets>=17,<18"]
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.34,<1",
+    "yfinance>=0.2.66,<1",
+    "websockets>=17,<18",
+    "duckdb>=1.4,<2",
+    "prometheus-client>=0.23,<1",
+    "databento>=0.70,<1",
+]
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.11,<1"]
+dev = [
+    "pytest>=8,<10",
+    "httpx>=0.28,<1",
+    "ruff>=0.11,<1",
+    "hypothesis>=6,<7",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["backend"]
