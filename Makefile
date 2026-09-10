@@ -20,10 +20,10 @@ test:
 
 verify:
 	uv run ruff check backend tests scripts
-	uv run pytest -q
 	npm --prefix apps/web run typecheck
 	npm --prefix apps/web run test:unit
 	npm --prefix apps/web run build
+	uv run pytest -q
 
 evaluate:
 	uv run python scripts/evaluate.py
