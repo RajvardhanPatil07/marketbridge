@@ -2,15 +2,17 @@
 
 # 🌉 MarketBridge v1
 
-### Free-first market safety infrastructure for 24/7 equity perpetuals
+### Market Truth → Portfolio Risk → Safe Action → Verifiable Proof
 
 **US stocks sleep. Equity perpetuals don’t.**
 
 **Verify the market before leverage acts on it.**
 
-[War Room](./docs/DEMO.md) · [Architecture](./docs/ARCHITECTURE.md) · [Free-first stack](./docs/FREE_FIRST_STACK.md) · [Risk gate](./docs/RISK_GATE.md) · [Safety Passport](./docs/SAFETY_PASSPORT.md)
+[Proof + War Room](./docs/DEMO.md) · [Historical proof](./docs/PROOF.md) · [Architecture](./docs/ARCHITECTURE.md) · [Threat model](./docs/THREAT_MODEL.md) · [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md)
 
 </div>
+
+![MarketBridge architecture](./docs/media/architecture.svg)
 
 ---
 
@@ -42,6 +44,29 @@ account exposure + order intent ────────────────
 
 Valid `REDUCE` and `CLOSE` requests remain available when evidence degrades. `OPEN` and `INCREASE` fail closed when Market Truth is not sufficiently qualified.
 
+## Proof before the synthetic attack
+
+The `/demo/` judge flow now starts with evidence before the controlled War Room:
+
+1. **Historical reconstruction** — published July 2026 SK Hynix / TradeXYZ observations pass through the same deterministic consequence function used by the live risk gate. It is explicitly counterfactual and consumes no future outcome.
+2. **Operating benchmark** — a labeled 450-case safety suite reports TP/TN/FP/FN, false-positive and false-negative rates, precision/recall, and measured core/gateway p50/p95/p99 latency.
+3. **Portfolio Risk Firewall** — even qualified Market Truth can be capped when the proposed order creates excessive single-name, sector, correlated-risk-bucket, account, or session risk.
+4. **Safe Alternative** — capped requests return the maximum permitted leverage and notional instead of a binary no.
+5. **Host integration proof** — a reference Mochatrade pre-trade adapter shows how a host binds the short-lived Safety Passport to the exact order.
+
+Proof endpoints:
+
+```text
+GET /v1/proof/historical
+GET /v1/proof/benchmark
+GET /v1/proof/portfolio
+```
+
+The historical view is `HISTORICAL_RECONSTRUCTION`, not a licensed consolidated feed. The operating suite is `SYNTHETIC_LABELED_BENCHMARK`, not a historical-market backtest. Latency values are measured when the endpoint runs rather than hard-coded into this README.
+
+See [proof methodology](./docs/PROOF.md), [threat model](./docs/THREAT_MODEL.md), and [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md).
+
+---
 ## The hackathon demo
 
 Open `/demo/` and run the judge flow:
@@ -105,6 +130,9 @@ Marketaux news, SEC filings/fundamentals, FRED and optional research sources hel
 ```text
 GET  /v1/providers
 GET  /v1/intelligence/{symbol}
+GET  /v1/proof/historical
+GET  /v1/proof/benchmark
+GET  /v1/proof/portfolio
 POST /v1/demo/war-room
 POST /v1/demo/war-room/replay
 POST /v1/demo/war-room/reset
@@ -142,6 +170,7 @@ The public synthetic War Room needs no market-data key. To enable real free-firs
 
 ```bash
 make verify
+make benchmark-risk
 make e2e
 make live-check
 ```
@@ -157,9 +186,20 @@ MarketBridge is a hackathon/pilot advisory architecture, **not** a certified exc
 - AI may tighten but never loosen deterministic controls.
 - Learned estimates never become trusted anchors on their own.
 - One provider is never presented as independent consensus.
+- Multiple vendor labels sharing one upstream are not counted as independent witnesses.
 - News, filings, macro and research data do not create Market Truth.
 - Unknown entitlement/display rights are treated conservatively.
 - Counterfactual replay reports prevented **simulated additional exposure**, not guaranteed savings.
+
+## Team and license
+
+**Team FinalCommit:** Harshil Amin · Aniket Gaikwad. Implementation provenance remains visible in Git history; [TEAM.md](./TEAM.md) intentionally avoids inventing role attribution.
+
+Licensed under MIT. See [LICENSE](./LICENSE).
+
+## Deployment economics
+
+The deterministic risk-critical policy path uses **0 LLM calls** and **0 paid API calls inside the policy function**. Hosting and market-data licensing remain deployment/entitlement specific; MarketBridge does not invent a dollar cost without measured inputs.
 
 ## Why this is different
 
@@ -167,8 +207,10 @@ Trading AI asks: **Where will price go?**
 
 Fraud systems ask: **Can we trust this user or transaction?**
 
-MarketBridge asks:
+Traditional margin systems ask: **How much leverage can this account survive?**
 
-> **Can we trust this leveraged market price enough to let new risk act on it?**
+MarketBridge asks upstream:
+
+> **Can we trust this market enough for this portfolio to take this leverage — and can we prove why we allowed or denied it?**
 
 That is the product.
