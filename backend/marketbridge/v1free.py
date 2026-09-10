@@ -1,6 +1,6 @@
 """MarketBridge v1 free-first routes layered onto the existing API.
 
-These routes deliberately reuse the existing RiskGateway.  Synthetic War Room
+These routes deliberately reuse the existing RiskGateway. Synthetic War Room
 scenarios are labelled and never masquerade as live exchange executions.
 """
 
@@ -34,7 +34,7 @@ def _war_room_risk_request(payload: WarRoomRequest, now: datetime) -> RiskCheckR
     base_reference = Decimal("184.52") if symbol == "NVDA" else Decimal("346.80")
     mark = {
         "NORMAL": base_reference - Decimal("0.01"),
-        "POISONED_MARK": base_reference * Decimal("1.03078"),
+        "POISONED_MARK": (base_reference * Decimal("1.03078")).quantize(Decimal("0.000001")),
         "RECOVERY": base_reference + Decimal("0.01"),
     }[payload.scenario]
     intent_kind = IntentKind.CLOSE if payload.intent == "CLOSE" else IntentKind.OPEN
@@ -67,7 +67,6 @@ def _war_room_risk_request(payload: WarRoomRequest, now: datetime) -> RiskCheckR
 
 def _story(payload: WarRoomRequest, result: dict) -> dict:
     market = result.get("market", {})
-    divergence = market.get("divergence_bps")
     scenario_copy = {
         "NORMAL": {
             "headline": "Independent evidence and venue mark agree.",
@@ -88,7 +87,7 @@ def _story(payload: WarRoomRequest, result: dict) -> dict:
         "no_trade_submitted": True,
         "reference_price": market.get("reference_price"),
         "venue_mark": market.get("venue_mark"),
-        "divergence_bps": divergence,
+        "divergence_bps": market.get("divergence_bps"),
         "confidence": market.get("confidence"),
         "market_state": market.get("asset_state"),
         "decision": result.get("action"),
