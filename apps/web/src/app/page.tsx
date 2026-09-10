@@ -1,5 +1,5 @@
-import { LandingWorkspace } from "@/components/market-workspaces";
+import { V1Home } from "@/components/v1-experience";
 
 export default function Home() {
-  return <LandingWorkspace />;
+  return <V1Home />;
 }

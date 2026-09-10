@@ -1,7 +1,7 @@
 [project]
 name = "marketbridge-demo"
-version = "1.0.0"
-description = "Market safety control plane for 24/7 equity perpetuals"
+version = "1.1.0"
+description = "Free-first market safety control plane for 24/7 equity perpetuals"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115,<1",
@@ -10,7 +10,6 @@ dependencies = [
     "websockets>=17,<18",
     "duckdb>=1.4,<2",
     "prometheus-client>=0.23,<1",
-    "databento>=0.70,<1",
 ]
 
 [dependency-groups]

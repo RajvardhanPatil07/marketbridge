@@ -1,14 +1,14 @@
 .PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
 
 setup:
-	uv sync --frozen
+	uv sync
 	npm --prefix apps/web ci
 
 build:
 	npm --prefix apps/web run build
 
 serve:
-	uv run --env-file .env uvicorn marketbridge.api:app --app-dir backend --host 0.0.0.0 --port $${PORT:-8000}
+	uv run --env-file .env uvicorn marketbridge.app:app --app-dir backend --host 0.0.0.0 --port $${PORT:-8000}
 
 demo: build serve
 

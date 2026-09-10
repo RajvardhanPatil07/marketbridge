@@ -1,4 +1,4 @@
-"""Validate live-market configuration without printing credentials."""
+"""Validate free-first live-market configuration without printing credentials."""
 
 from __future__ import annotations
 
@@ -8,31 +8,47 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
+from marketbridge.providers import provider_registry  # noqa: E402
 from marketbridge.shadow import LivePipeline, probe_alpaca_subscription  # noqa: E402
 
 
 def main() -> int:
-    configuration = LivePipeline(ROOT / "artifacts" / "live-config-check.jsonl").configuration()
-    result = {"configuration": configuration, "runtime_probe": None}
+    pipeline = LivePipeline(ROOT / "artifacts" / "live-config-check.jsonl")
+    configuration = pipeline.configuration()
+    registry = provider_registry(pipeline.snapshot())
+    result = {
+        "architecture_version": registry["architecture_version"],
+        "cost_mode": registry["cost_mode"],
+        "configuration": configuration,
+        "runtime_probe": None,
+        "notes": [
+            "Alpaca IEX is the free equity stream and remains one market witness.",
+            "Hyperliquid is venue context and never feeds the independent underlying reference.",
+            "Twelve Data is optional and is not required for the free-first demo.",
+            "News/SEC/macro data are context-only.",
+        ],
+    }
     if configuration["errors"]:
         print(json.dumps(result, indent=2, sort_keys=True))
         return 2
-    if not configuration["execution_evidence_configured"]:
+
+    alpaca = configuration["alpaca"]
+    if not alpaca["credentials_configured"]:
+        result["runtime_probe"] = {"status": "NOT_CONFIGURED", "runtime_eligible": False}
         print(json.dumps(result, indent=2, sort_keys=True))
-        return 1
+        return 1 if configuration["strict_live_data"] else 0
+
     result["runtime_probe"] = probe_alpaca_subscription()
-    secondary_configured = any(
-        configuration[provider]["credentials_configured"]
-        for provider in ("databento", "twelve_data")
-    )
     result["secondary_provider_runtime_check"] = (
-        "DEFERRED_TO_PIPELINE_HEALTH" if secondary_configured else "NOT_CONFIGURED"
+        "OPTIONAL_TWELVE_DATA_CONFIGURED"
+        if configuration.get("twelve_data", {}).get("credentials_configured")
+        else "NOT_REQUIRED_FOR_FREE_DEMO"
     )
     print(json.dumps(result, indent=2, sort_keys=True))
-    alpaca_ready_for_path = result["runtime_probe"]["runtime_eligible"] or (
-        result["runtime_probe"]["subscribed"] and secondary_configured
-    )
-    return 0 if alpaca_ready_for_path else 1
+
+    if configuration["strict_live_data"]:
+        return 0 if result["runtime_probe"].get("runtime_eligible") else 1
+    return 0
 
 
 if __name__ == "__main__":

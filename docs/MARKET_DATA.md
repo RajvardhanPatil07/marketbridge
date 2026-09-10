@@ -1,59 +1,93 @@
-# Historical market data
+# Market data and provider policy
 
-MarketBridge exposes display-only OHLCV through `GET /v1/market/bars/{symbol}`. Provider credentials remain in the FastAPI process and are never serialized to the browser.
+MarketBridge v1 is **free-first** and conservative about what a provider is allowed to influence.
 
-Historical/display bars never become order-qualification evidence. Order checks consume independent
-Market Truth; venue mark/oracle/mid/BBO fields remain one venue context under test. Entitlement for
-non-display computation is versioned separately in `config/entitlements.yaml` and defaults conservatively.
+## Active roles
 
-## Request model
+| Source | Capability | Market Truth role | Default v1 use |
+|---|---|---|---|
+| Alpaca / IEX | live US equity | one underlying-market witness | enabled when backend credentials exist |
+| Hyperliquid | perp/venue context | venue comparison only | enabled when exact coin map is configured |
+| Marketaux | financial news | none | context only |
+| SEC EDGAR | filings/company facts | none | official context only |
+| Nasdaq Symbol Directory | security master | none | symbol/reference metadata |
+| Twelve Data | optional equity cross-check | disabled as authoritative by default | optional/internal only |
+| Yahoo/yfinance | research fallback | none | disabled by default |
+| FRED | macro | none | optional context |
+| CoinGecko | crypto overview | none | optional display/context |
 
-`range` controls the visible date window; `resolution` controls candle width. They are deliberately independent. Supported ranges are `1D`, `5D`, `1M`, `3M`, `6M`, `YTD`, `1Y`, `5Y`, and `MAX`. Defaults are `1Min`, `5Min`, `30Min`, `1Hour`, `1Day`, `1Day`, `1Day`, `1Week`, and `1Month` respectively.
+## No paid-provider dependency
 
-The remaining parameters are:
+Databento is not part of the MarketBridge v1 free-first deployment path. The Python dependency, import workflow and environment requirement are removed from the branch.
 
-- `feed=iex|sip|boats`
-- `adjustment=raw|all`
-- `session=regular|extended|all`
-- optional ISO-8601 `start` and `end` overrides
+## Provider independence
 
-Every response includes provider, feed, entitlement, delay, timezone, session, adjustment and cache metadata. Missing periods remain missing; the service never inserts candles for closures, weekends, outages, or absent entitlements.
+MarketBridge counts **provider family** and **venue family** separately.
 
-## Alpaca flow
+Two observations are not magically independent because they appear as two rows in an API response. If both observations share one upstream provider/infrastructure family, that concentration remains visible and confidence is reduced accordingly.
 
-1. FastAPI validates the symbol, range, resolution, feed, adjustment, and session.
-2. A bounded TTL cache coalesces identical concurrent requests.
-3. The Alpaca adapter requests ascending pages, follows every `next_page_token`, and deduplicates bars by UTC timestamp.
-4. Retryable `429` and `5xx` responses use bounded exponential backoff. Authentication, entitlement, symbol, malformed-data, and provider failures become safe normalized errors.
-5. Bars are normalized to timestamp, OHLC, volume, VWAP, and trade count.
-6. Session filtering uses `America/New_York`, while timestamps remain UTC on the wire.
+For the free hackathon path, Alpaca IEX remains one venue. It can drive a live display and supply one evidence witness, but it cannot satisfy a two-independent-source rule by itself.
 
-`MAX` starts with a bounded ten-year monthly window. The response supplies `has_more_history` and `next_end`; the UI requests older windows and prepends them. It never sends an unbounded lifetime array to the browser.
+## Data classes
 
-## Integrity boundary
+### MARKET_EVIDENCE
 
-Historical chart bars are not MarketBridge oracle evidence. The response states
-`data_role=DISPLAY_ONLY_NOT_ORACLE_EVIDENCE`. Alpaca IEX is a valid display feed but a single venue
-and cannot create independent consensus on its own. Twelve Data's `quotes/price` WebSocket may act
-as one additional provider/venue witness when its subscription is acknowledged and current;
-Databento remains an optional paid source. Each vendor aggregate counts once, regardless of named
-upstream exchanges. A venue mark is the value being evaluated and never validates itself.
+Potential input to Market Truth after freshness, eligibility, entitlement and independence checks.
 
-Raw and adjusted history are never silently mixed. Incremental refresh runs only in `raw` mode; adjusted charts remain historical until a matching adjusted live policy is explicitly designed.
+### VENUE_EVIDENCE
 
-## Nasdaq catalogue and live limits
+What the trading venue currently believes: mark/oracle/mid/BBO/funding/open interest. It is compared against Market Truth and never fed back into the independent underlying reference.
 
-MarketBridge keeps a local SQLite copy of 30 selected stocks from Nasdaq's public `nasdaqlisted.txt`
-Symbol Directory and refreshes it at most once per day. `GET /v1/symbols` searches that curated universe; selecting a result
-opens its asset workspace and loads display-only Alpaca history on demand. The last verified copy is
-retained if Nasdaq is temporarily unavailable.
+### CONTEXT / OFFICIAL_CONTEXT
 
-Catalogue size never becomes WebSocket load. `POST /v1/market/active-symbols/{symbol}` adds a symbol
-to a bounded priority/TTL scheduler. Orders and positions outrank watchlists, views, recents, and the
-bootstrap set. Alpaca defaults to 30 active symbols and Twelve Data to 8; both limits are configurable
-downward with `ALPACA_LIVE_SYMBOL_LIMIT` and `TWELVE_DATA_LIVE_SYMBOL_LIMIT` to match the account's
-actual entitlement. Inactive view/recent entries expire after 15 minutes.
+News, SEC filings, fundamentals and macro information. Useful for human explanation; never a qualified price observation.
 
-Every catalogue record exposes one of `CATALOGUE_ONLY`, `DISPLAY_DATA_AVAILABLE`, or
-`LIVE_RISK_ELIGIBLE`. Curated stocks without a symbol-specific policy use a conservative 1×,
-manual-review policy; valid reduce/close intents remain preserved by the risk gateway.
+### RESEARCH_ONLY
+
+Convenience data that is explicitly barred from safety qualification. Yahoo/yfinance lives here.
+
+## Time semantics
+
+Every accepted market observation keeps source event time and local receipt time separate. Freshness is based on the event being evaluated, not simply whether the connection is alive.
+
+A heartbeat does not refresh an old price.
+
+## Display versus risk eligibility
+
+The UI may display data that the risk engine refuses to trust. This is intentional.
+
+Example:
+
+```text
+Alpaca / IEX    LIVE DISPLAY
+Market Truth    SINGLE-SOURCE / NOT FULLY QUALIFIED
+New leverage    GUARDED OR BLOCKED BY POLICY
+```
+
+That is a feature, not an error state.
+
+## Historical charts
+
+The existing Alpaca historical market-data service remains display-only and is isolated from Market Truth qualification. Historical bars can power charting/indicators without silently becoming current execution evidence.
+
+## News
+
+Marketaux is cached server-side for 20 minutes. The browser never receives the API token. Articles are normalized and labelled `NEWS_CONTEXT` with `affects_market_truth=false`.
+
+## SEC EDGAR
+
+The v1 SEC adapter uses public SEC endpoints to provide:
+
+- company identity/CIK;
+- recent 8-K, 10-Q, 10-K and related official filings;
+- latest available XBRL facts for revenue, net income, assets, cash and diluted EPS when present.
+
+SEC information is authoritative **company context**, not an exchange quote.
+
+## Optional providers
+
+Twelve Data, FRED and CoinGecko are capability adapters, not required dependencies. Their use must follow the actual account tier and intended display/non-display rights. Unknown permission means disabled for that purpose.
+
+## Synthetic evidence
+
+The public adversarial War Room uses explicit `SYNTHETIC_DEMO` evidence so it can demonstrate poisoned marks, exit preservation and recovery deterministically without pretending free APIs provide institutional coverage.

@@ -1,4 +1,8 @@
-"""Server-side Marketaux adapter for ticker-linked financial news."""
+"""Server-side Marketaux adapter for ticker-linked financial news.
+
+The free-first architecture deliberately caches aggressively: the browser never calls
+Marketaux directly, and news is context-only rather than executable market evidence.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +19,9 @@ from urllib.parse import urlencode, urlparse
 MARKETAUX_HOST = "api.marketaux.com"
 MARKETAUX_PATH = "/v1/news/all"
 TRACKED_NEWS_SYMBOLS = ("NVDA", "TSLA", "AAPL", "MSFT", "AMD", "QQQ")
-NEWS_CACHE_SECONDS = 300
+# 20 minutes => at most 72 scheduled-style refreshes/day for a global cache key,
+# leaving headroom under the current free allowance for retries/manual refreshes.
+NEWS_CACHE_SECONDS = 20 * 60
 
 _cache: dict[str, tuple[float, dict]] = {}
 _cache_lock = Lock()
@@ -36,7 +42,7 @@ def _request_marketaux(params: dict[str, str]) -> dict:
         connection.request(
             "GET",
             f"{MARKETAUX_PATH}?{urlencode(params)}",
-            headers={"Accept": "application/json", "User-Agent": "MarketBridge/0.3"},
+            headers={"Accept": "application/json", "User-Agent": "MarketBridge/1.0"},
         )
         response = connection.getresponse()
         payload = response.read().decode("utf-8")
@@ -101,12 +107,16 @@ def _article(item: object) -> dict | None:
         "published_at": str(item.get("published_at") or ""),
         "symbols": symbols,
         "sentiment_score": _sentiment(entities),
+        "source_class": "NEWS_CONTEXT",
+        "affects_market_truth": False,
     }
 
 
 def _base_payload(symbol: str | None) -> dict:
     return {
         "provider": "marketaux",
+        "source_class": "CONTEXT",
+        "affects_market_truth": False,
         "configured": False,
         "status": "UNCONFIGURED",
         "symbol": symbol,
@@ -114,7 +124,7 @@ def _base_payload(symbol: str | None) -> dict:
         "cache_seconds": NEWS_CACHE_SECONDS,
         "cached": False,
         "articles": [],
-        "message": "Set MARKETAUX_API_TOKEN on the backend to enable live financial news.",
+        "message": "Set MARKETAUX_API_TOKEN on the backend to enable free-tier financial news.",
     }
 
 
@@ -145,7 +155,14 @@ def get_market_news(symbol: str | None = None, *, force: bool = False) -> dict:
     }
     try:
         raw = _request_marketaux(params)
-        articles = [article for item in raw.get("data", []) if (article := _article(item))]
+        seen: set[str] = set()
+        articles: list[dict] = []
+        for item in raw.get("data", []):
+            article = _article(item)
+            if article is None or article["url"] in seen:
+                continue
+            seen.add(article["url"])
+            articles.append(article)
         payload = {
             **_base_payload(normalized_symbol),
             "configured": True,

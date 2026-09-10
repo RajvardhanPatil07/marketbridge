@@ -7,7 +7,18 @@ import type { DisplaySnapshot, DisplaySnapshotsResponse, ShadowSnapshot } from "
 type MarketDataContextValue = { assets: MarketAsset[]; snapshot: ShadowSnapshot | null; connection: ConnectionState; error: string | null; loading: boolean; lastUpdated: string | null; refresh: () => Promise<void> };
 const MarketDataContext = createContext<MarketDataContextValue | null>(null);
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
-const friendlyError = (status?: number) => status === 401 || status === 403 ? "Market data access is not authorized." : status === 429 ? "Market data is rate limited. Updates will resume automatically." : "The market-data service is unavailable. Existing research tools remain accessible.";
+const friendlyError = (status?: number) => status === 401 || status === 403 ? "Market data access is not authorized." : status === 429 ? "Market data is rate limited. Updates will resume automatically." : "The market-data service is unavailable. The synthetic War Room remains available.";
+
+function sanitizeSnapshot(next: ShadowSnapshot): ShadowSnapshot {
+  return { ...next, providers: next.providers.filter((provider) => provider.id !== "databento") };
+}
+
+function providerConnection(next: ShadowSnapshot): ConnectionState {
+  const live = next.providers.some((provider) => ["alpaca", "hyperliquid", "twelve-data"].includes(provider.id) && ["AVAILABLE", "LIMITED", "AUTHENTICATED"].includes(provider.status));
+  if (live) return "live";
+  if (next.decisions.length || next.yahoo?.observations?.length) return "delayed";
+  return "offline";
+}
 
 export function MarketDataProvider({ children }: { children: React.ReactNode }) {
   const [snapshot, setSnapshot] = useState<ShadowSnapshot | null>(null);
@@ -16,9 +27,9 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [displaySnapshots, setDisplaySnapshots] = useState<DisplaySnapshot[]>([]);
   const fallbackStarted = useRef(false);
-  const accept = useCallback((next: ShadowSnapshot) => {
-    setSnapshot(next); setError(null); setLoading(false);
-    setConnection(next.yahoo?.provider_status === "AVAILABLE" ? "live" : "delayed");
+  const accept = useCallback((incoming: ShadowSnapshot) => {
+    const next = sanitizeSnapshot(incoming);
+    setSnapshot(next); setError(null); setLoading(false); setConnection(providerConnection(next));
   }, []);
   const loadSnapshot = useCallback(async () => {
     try {
@@ -38,14 +49,7 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
     } catch { /* preserve the last verified display snapshot */ }
   }, []);
   const refresh = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE}/v1/shadow/refresh`, { method: "POST", headers: { Accept: "application/json" } });
-      if (!response.ok) throw Object.assign(new Error(), { status: response.status });
-      await Promise.all([loadSnapshot(), loadDisplaySnapshots()]);
-    } catch (cause) {
-      const status = typeof cause === "object" && cause && "status" in cause ? Number(cause.status) : undefined;
-      setError(friendlyError(status));
-    }
+    await Promise.all([loadSnapshot(), loadDisplaySnapshots()]);
   }, [loadDisplaySnapshots, loadSnapshot]);
 
   useEffect(() => {
@@ -60,7 +64,7 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
       source.onerror = () => setConnection((state) => state === "live" ? "delayed" : "offline");
     };
     try {
-      socket = new WebSocket(`${wsOrigin}/v1/shadow/ws`); socket.onopen = () => setConnection("live");
+      socket = new WebSocket(`${wsOrigin}/v1/shadow/ws`); socket.onopen = () => setConnection((state) => state === "connecting" ? "delayed" : state);
       socket.onmessage = (event) => { const message = JSON.parse(event.data) as { type: string; data?: ShadowSnapshot }; if (message.type === "shadow_snapshot" && message.data) accept(message.data); };
       socket.onerror = startFallback; socket.onclose = startFallback;
     } catch { startFallback(); }

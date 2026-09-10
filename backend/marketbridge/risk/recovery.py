@@ -51,3 +51,11 @@ class RecoveryTracker:
                 "elapsed_seconds": round(elapsed, 3),
                 "minimum_duration_seconds": self.minimum_duration.total_seconds(),
             }
+
+    def reset(self, symbol: str | None = None) -> None:
+        """Reset demo/pilot recovery state without mutating policy configuration."""
+        with self._lock:
+            if symbol is None:
+                self._states.clear()
+            else:
+                self._states.pop(symbol, None)
