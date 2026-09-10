@@ -17,7 +17,7 @@ test("reports honest market health from API through the live UI", async ({ page,
     },
   });
 
-  await page.goto("/");
+  await page.goto("/lab/");
   const snapshotResponsePromise = page.waitForResponse(
     (response) => response.url().endsWith("/v1/shadow/snapshot") && response.request().method() === "GET",
   );

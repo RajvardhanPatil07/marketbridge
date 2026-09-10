@@ -8,7 +8,7 @@ export default function EvidenceLineage({ decision }: { decision: ShadowDecision
   const nodes: Node[] = evidence.map((item, index) => ({
     id: `e-${index}`,
     position: { x: 0, y: index * 78 },
-    data: { label: `${item.provider_family} · ${item.venue_family}\n${item.price.toFixed(2)} · ${item.fresh ? "fresh" : "stale"}` },
+    data: { label: `PROVIDER WITNESS #${index + 1}\n${item.provider_family} → ${item.venue_family}\n${item.price.toFixed(2)} · ${item.fresh ? "fresh" : "stale"}` },
     className: item.eligible && item.fresh ? "lineage-node evidence healthy" : "lineage-node evidence muted",
   }));
   nodes.push(
@@ -17,10 +17,10 @@ export default function EvidenceLineage({ decision }: { decision: ShadowDecision
     { id: "risk", position: { x: 610, y: 185 }, data: { label: `Risk: ${decision.risk_state}\n${decision.recommended_max_leverage}× leverage` }, className: "lineage-node risk" },
   );
   if (decision.venue_mark) {
-    nodes.push({ id: "mark", position: { x: 330, y: 285 }, data: { label: `Venue mark (comparison only)\n${decision.venue_mark.price.toFixed(2)}` }, className: "lineage-node mark" });
+    nodes.push({ id: "mark", position: { x: 330, y: 285 }, data: { label: `VENUE UNDER TEST · ONE CONTEXT\nmark / oracle / mid / BBO ≠ witnesses\n${decision.venue_mark.price.toFixed(2)} · comparison only` }, className: "lineage-node mark" });
   }
 
-  const edgeStyle = { stroke: "#9eabc0", strokeWidth: 1.4 };
+  const edgeStyle = { stroke: "#8b949e", strokeWidth: 1.4 };
   const edges: Edge[] = evidence.map((_, index) => ({
     id: `e-${index}-reference`, source: `e-${index}`, target: "reference", markerEnd: { type: MarkerType.ArrowClosed }, style: edgeStyle,
   }));

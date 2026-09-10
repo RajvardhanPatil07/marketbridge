@@ -2,7 +2,7 @@
 
 # 🌉 MarketBridge
 
-### Real-time mark integrity for 24/7 US-stock perpetuals
+### The Market Safety Control Plane for 24/7 Equity Perpetuals
 
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
@@ -12,7 +12,9 @@
 ![Security](https://img.shields.io/badge/security-HMAC%20%2B%20replay%20protection-16c784)
 ![Tests](https://img.shields.io/badge/backend-tests-passing-16c784)
 
-**MarketBridge sits between market data and a risk engine. It checks whether a venue mark is supported by independent evidence, estimates a conservative reference when direct evidence becomes weak, measures uncertainty, and converts that uncertainty into an advisory risk limit.**
+**Verify the market before leverage acts on it.**
+
+Independent market evidence. Exposure-aware order decisions. Cryptographically replayable proof.
 
 </div>
 
@@ -22,36 +24,82 @@
 
 US stocks do not have the same price-discovery schedule as a 24/7 perpetual market. During thin overnight periods, weekends, outages, or bad prints, a leveraged market can see a mark that is stale, isolated, or difficult to verify.
 
-MarketBridge does not blindly accept the newest number. It asks:
+MarketBridge does not blindly accept the newest number or stop at a recommendation. It asks:
 
 1. **Where did this price come from?**
 2. **Is the source fresh?**
 3. **Do independent venues agree?**
 4. **Are all venues coming through the same provider?**
 5. **How far is the trading venue mark from the independent reference?**
-6. **How much leverage should be allowed while evidence is weak?**
+6. **What does this order do to the customer's exposure and liquidation distance?**
+7. **Should new risk be allowed, capped, blocked, or reviewed?**
 
-The result is an easy-to-read operator decision such as:
+The result is a short-lived, enforceable advisory decision such as:
 
 ```text
-NVDA
-MarketBridge reference     $184.51
-Venue mark                 $184.76
-Divergence                   13.5 bps
-Confidence                   94%
-Risk state                   NORMAL
-Recommended max leverage     20x
+NVDA BUY $10,000
+Requested leverage           10x
+MarketBridge reference     $184.52
+Venue mark                 $190.20
+Divergence                  307.8 bps
+Market truth                QUALIFIED / HALTED
+Action                      BLOCK_NEW_RISK
+Reduce / close              AVAILABLE
+Safety Passport             mbp_… / VERIFIED
 ```
 
-If evidence becomes weak, MarketBridge can return `GUARDED`, `RESTRICTED`, or `HALTED` instead of pretending a low-confidence price is certain.
+Market Truth and Customer Consequence are separate. Account exposure never changes market confidence.
+The risk gate consumes Market Truth plus account exposure and order intent. Valid `REDUCE`/`CLOSE`
+requests remain available when evidence degrades, while `OPEN`/`INCREASE` fail closed.
+
+## Core safety flow
+
+```text
+market evidence → mark integrity → Market Truth
+                                      + account exposure
+                                      + order intent
+                                    → Order Risk Gate
+                                    → ALLOW / CAP / BLOCK / REVIEW
+                                    → Safety Passport
+                                    → deterministic replay
+```
+
+Every consequential check returns a three-second decision and a SHA-256 hash-chained Safety Passport.
+Replay compares the original decision with current policy or an explicitly labelled no-gate
+counterfactual. It reports prevented additional simulated exposure, never fabricated fills or savings.
+
+The safety boundary is hard: direct consensus outranks learned estimates; estimates never qualify;
+AI may tighten but never loosen; MarketBridge holds no execution, wallet, custody, deployer, or oracle key.
+
+## One-command demo
+
+```bash
+make setup
+make demo
+```
+
+Open `http://127.0.0.1:8000/terminal/`, then run NORMAL → POISONED MARK → CLOSE → passport/replay →
+RECOVERY. Scenario data is visibly labelled synthetic and uses the same endpoint and policy as the
+integration flow. See [`docs/DEMO.md`](docs/DEMO.md).
+
+## Safety API
+
+- `POST /v1/integrations/mochatrade/risk-check` — authoritative order action + passport
+- `GET /v1/passports/{passport_id}` — verification and expiry state
+- `POST /v1/replay/risk-decision` — original/current/no-gate deterministic replay
+- `POST /v1/passports/{passport_id}/outcome` — authenticated outcome annotation
+
+Detailed contracts and policy are in [`docs/RISK_GATE.md`](docs/RISK_GATE.md),
+[`docs/SAFETY_PASSPORT.md`](docs/SAFETY_PASSPORT.md), and [`docs/REPLAY.md`](docs/REPLAY.md).
 
 ---
 
-## What changed in v0.3
+## Preserved market-integrity platform
 
 ### ⚡ Lower-latency streaming
 
 - Alpaca WebSocket adapter for live venue-labelled stock trades.
+- Twelve Data `quotes/price` WebSocket adapter for a free-tier-friendly second witness.
 - Databento EQUS.MINI MBP-1 live adapter and entitlement-gated historical importer.
 - Optional Hyperliquid active-asset-context observer.
 - WebSocket-first browser transport with SSE fallback.
@@ -240,6 +288,14 @@ Then use the new held-out metrics from `reports/ml-evaluation.json`. See [`docs/
 
 ## Live data
 
+### Historical OHLCV and professional chart
+
+The asset and terminal workspaces now request real Alpaca OHLCV from `GET /v1/market/bars/{symbol}`. Date range and candle resolution are separate controls; requests are paginated, retried, deduplicated, cached, cancellable, and normalized server-side. `MAX` uses bounded progressive backfill rather than sending a lifetime dataset to the browser.
+
+Candlestick, OHLC bar, line, area, baseline, and Heikin Ashi modes are available. SMA, EMA, Bollinger Bands, Volume, RSI, and MACD use deterministic calculations, with oscillators and volume in lower panes. Chart state persists locally and the workstation includes provider/feed status, crosshair OHLCV, screenshots, fullscreen, price-scale modes, and keyboard shortcuts.
+
+Historical bars are explicitly display-only and never become oracle evidence merely because they render on a chart. See [`docs/MARKET_DATA.md`](docs/MARKET_DATA.md) and [`docs/CHARTING.md`](docs/CHARTING.md).
+
 ### Alpaca
 
 Set backend-only credentials:
@@ -258,7 +314,30 @@ Validate configuration without exposing credentials:
 make live-check
 ```
 
-The command exits `0` only when configuration is valid and the configured Alpaca feed can produce multi-venue evidence. Enable `MARKETBRIDGE_REQUIRE_LIVE_DATA=1` on the production backend to fail startup/readiness when that condition is not met. Keep it disabled for the offline safety-lab demo.
+The command exits `0` only when configuration is valid and Alpaca can participate in a configured
+evidence path: either entitled SIP, or Alpaca plus Twelve Data/Databento. Runtime provider health
+still determines whether current evidence is usable. Enable `MARKETBRIDGE_REQUIRE_LIVE_DATA=1` on
+the production backend only after live entitlements have been verified. Keep it disabled for the
+offline safety-lab demo.
+
+### Twelve Data
+
+Twelve Data is the free-tier-friendly independent price witness:
+
+```bash
+export TWELVE_DATA_API_KEY="..."
+```
+
+The server opens the official `quotes/price` WebSocket, subscribes to a bounded, priority-ranked
+active set (eight symbols by default), sends heartbeats, validates timestamps/prices, and reconnects
+with bounded backoff. The curated 30-stock Nasdaq universe remains searchable without consuming live slots. The
+entire Twelve Data stream counts as exactly one provider and one venue family, even if an event
+contains an exchange label. Partial or rejected subscriptions are visible in provider health and
+never silently become qualified evidence.
+
+Basic-plan symbol availability and external-display rights can vary. Confirm the dashboard's
+actual entitlement before enabling strict live-data mode. Twelve Data is a live evidence witness;
+historical chart bars continue to come from Alpaca.
 
 ### Databento
 
@@ -366,6 +445,10 @@ Important: the microsecond in-process benchmark is **not** end-to-end market lat
 | `WS /v1/shadow/ws` | Primary live browser stream |
 | `POST /v1/shadow/refresh` | Refresh research observations |
 | `POST /v1/integrations/mochatrade/market` | Advisory venue-mark ingestion |
+| `POST /v1/integrations/mochatrade/risk-check` | Short-lived ALLOW/CAP/BLOCK/REVIEW + Safety Passport |
+| `GET /v1/passports/{passport_id}` | Verify passport hash chain and expiry |
+| `POST /v1/replay/risk-decision` | Replay original/current or no-gate counterfactual policy |
+| `POST /v1/passports/{passport_id}/outcome` | Authenticated post-decision outcome annotation |
 | `GET /v1/demo/scenarios` | Synthetic safety scenarios |
 | `GET /v1/demo/evaluation` | Synthetic functional evaluation |
 | `GET /v1/incidents/sk-hynix-july-2026` | Historical reconstruction |
@@ -419,6 +502,10 @@ railway up
 
 Set secrets in Railway variables, not in Git.
 
+For the public synthetic ticket only, set `MARKETBRIDGE_ENABLE_PUBLIC_DEMO=1`. Omit it for a
+signed-integration-only deployment. Set `MOCHATRADE_HMAC_SECRET`, provider credentials, and
+`MARKETBRIDGE_REQUIRE_LIVE_DATA=1` only after verifying the corresponding production entitlements.
+
 ---
 
 ## Vercel frontend
@@ -441,7 +528,7 @@ Do not expose Alpaca or HMAC secrets as `NEXT_PUBLIC_*` variables.
 
 ## Honest scope
 
-MarketBridge v0.3 is a strong hackathon/pilot architecture, not a production exchange oracle.
+MarketBridge v1.0 is a strong hackathon/pilot safety-control-plane architecture, not a production exchange oracle.
 
 It does **not** claim:
 
@@ -461,7 +548,8 @@ Those boundaries are intentional. A trustworthy risk system should say what it k
 ```text
 backend/marketbridge/
   api.py           FastAPI, WebSocket/SSE and integration endpoints
-  shadow.py        live evidence, reference and risk engine
+  shadow.py        live evidence and immutable Market Truth engine
+  risk/            exposure policy, session calendar, recovery, passports, replay
   security.py      HMAC, replay protection and rate limiting
   engine.py        deterministic synthetic safety engine
   live.py          research-only market observations
@@ -473,6 +561,7 @@ apps/web/src/
   styles/          responsive dashboard styles
 
 fixtures/          synthetic scenario event streams
+config/            versioned asset and market-data entitlement policies
 tests/             backend/API tests
 docs/              demo and integration notes
 ```
@@ -489,6 +578,6 @@ The original shared archive contained a local Vercel credential file. This clean
 
 <div align="center">
 
-**MarketBridge — strong evidence when possible, safer risk when certainty disappears.**
+**MarketBridge — verify the market before leverage acts on it.**
 
 </div>

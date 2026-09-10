@@ -51,6 +51,17 @@ def test_databento_bbo_is_one_aggregated_provider_witness():
     assert LivePipeline._normalized_databento_bbo("NVDA", 201, 200, NOW, NOW) is None
 
 
+def test_twelve_data_price_is_one_aggregated_provider_witness():
+    observation = LivePipeline._normalized_twelve_data_price(
+        "NVDA", 200.0, NOW, NOW, "NASDAQ"
+    )
+    assert observation is not None
+    assert observation.provider == "twelve-data"
+    assert observation.venue == "NASDAQ"
+    assert observation.venue_key == "twelve-data-us-equities"
+    assert LivePipeline._normalized_twelve_data_price("NVDA", float("nan"), NOW, NOW) is None
+
+
 def test_venue_mark_immediately_annotates_current_decision_and_audit_log():
     audited = []
     oracle = ShadowOracle(audited.append)

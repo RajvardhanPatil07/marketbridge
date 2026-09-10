@@ -1,0 +1,83 @@
+.panel {
+  margin-top: 10px;
+  border: 1px solid var(--terminal-line);
+  border-radius: 7px;
+  background: var(--terminal-surface);
+  overflow: hidden;
+}
+
+.header, .summary, .market, .boundary {
+  display: flex;
+  align-items: center;
+}
+
+.header {
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--terminal-line);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.title h2 { margin: 0; font-size: 14px; }
+.title p { margin: 3px 0 0; color: var(--terminal-muted); font-size: 10px; }
+
+.badge {
+  border: 1px solid #345083;
+  border-radius: 4px;
+  padding: 4px 7px;
+  color: #8fb5ff;
+  font: 600 9px/1 monospace;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+.summary {
+  align-items: stretch;
+  border-bottom: 1px solid var(--terminal-line);
+}
+
+.summary div { flex: 1; padding: 12px 16px; border-right: 1px solid var(--terminal-line); }
+.summary div:last-child { border-right: 0; }
+.summary span, .market span { display: block; color: var(--terminal-muted); font-size: 9px; }
+.summary strong { display: block; margin-top: 5px; font: 600 14px/1 monospace; }
+
+.body { padding: 4px 16px; }
+.market { justify-content: space-between; gap: 18px; padding: 12px 0; border-bottom: 1px solid var(--terminal-line-soft); }
+.market:last-child { border-bottom: 0; }
+.marketCopy { min-width: 0; }
+.marketCopy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.marketCopy span { margin-top: 4px; }
+.marketPrice { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.marketPrice strong { font: 600 15px/1 monospace; }
+.positive { color: var(--terminal-green); }
+.negative { color: var(--terminal-red); }
+.quiet { padding: 18px 16px; color: var(--terminal-muted); font-size: 11px; }
+
+.quality {
+  border: 1px solid var(--terminal-line);
+  border-radius: 3px;
+  padding: 2px 5px;
+  color: var(--terminal-muted);
+  font: 600 8px/1 monospace;
+  font-style: normal;
+}
+
+.boundary {
+  gap: 7px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--terminal-line);
+  color: var(--terminal-muted);
+  font-size: 9px;
+}
+
+@media (max-width: 640px) {
+  .summary { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .summary div:nth-child(2) { border-right: 0; }
+  .market { align-items: flex-start; }
+}

@@ -11,7 +11,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 COPY backend/ backend/
+COPY config/ config/
 COPY fixtures/ fixtures/
+COPY models/ models/
+COPY reports/ reports/
 COPY --from=web /build/apps/web/out/ apps/web/out/
 ENV PATH="/app/.venv/bin:$PATH" PYTHONPATH=/app/backend PYTHONUNBUFFERED=1 PORT=8000
 RUN useradd --uid 10001 --create-home demo && chown -R demo:demo /app

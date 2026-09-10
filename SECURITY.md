@@ -12,6 +12,10 @@ MarketBridge is an **advisory-only** hackathon system. It reads market data and 
 - Remote market ingestion is disabled unless authentication is configured.
 - MarketBridge validates price ranges, timestamps, symbols, and request rates before a venue mark reaches the risk engine.
 - Audit persistence is asynchronous so a slow disk does not block pricing decisions.
+- Risk decisions expire after three seconds; an expired request ID cannot revive a decision.
+- `MARKETBRIDGE_ENABLE_PUBLIC_DEMO=1` permits only explicitly labelled synthetic risk checks without
+  HMAC. Live/shadow checks and venue-mark ingestion remain signed.
+- Safety Passports contain minimized account consequence fields, not customer identity or signing keys.
 
 ## Secrets found in older project archives
 

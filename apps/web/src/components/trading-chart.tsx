@@ -56,7 +56,7 @@ export default function TradingChart({
         textColor: theme === "dark" ? "#74808c" : "#7b879b",
         fontFamily: "Geist, Inter, system-ui, sans-serif",
         fontSize: 11,
-        attributionLogo: false,
+        attributionLogo: true,
       },
       grid: {
         vertLines: { color: theme === "dark" ? "#171d24" : "#f3f5f8" },

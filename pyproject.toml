@@ -1,7 +1,7 @@
 [project]
 name = "marketbridge-demo"
-version = "0.3.0"
-description = "AI-assisted mark-integrity and dynamic-risk layer for 24/7 equity perpetuals"
+version = "1.0.0"
+description = "Market safety control plane for 24/7 equity perpetuals"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115,<1",

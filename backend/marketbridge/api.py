@@ -21,15 +21,27 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from .evaluation import evaluate_all
 from .incidents import incident_reconstruction
+from .kalshi import TRACKED_KALSHI_SYMBOLS, get_kalshi_pulse
 from .live import get_live_snapshot
+from .market_data import HistoricalMarketDataService
+from .market_data.models import MarketDataError, Range, Resolution, Session
+from .metrics import PASSPORT_VERIFICATION_FAILURE, REPLAY_MISMATCH, observe_risk_check
 from .news import TRACKED_NEWS_SYMBOLS, get_market_news
+from .risk import ReplayRequest, RiskCheckRequest, RiskGateway
+from .risk.models import OutcomeRequest
+from .risk.passport import PassportStore
 from .scenarios import list_scenarios, run_scenario
 from .security import NonceStore, SignatureHeaders, SlidingWindowLimiter, verify_signature
 from .shadow import LivePipeline, TRACKED_SYMBOLS
+from .symbols import ActiveSubscriptions, NASDAQ_STOCK_UNIVERSE, SymbolCatalog
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = Path(os.environ.get("MARKETBRIDGE_WEB_DIR", str(ROOT / "apps" / "web" / "out"))).resolve()
-pipeline = LivePipeline(ROOT / "artifacts" / "shadow-decisions.jsonl")
+symbol_catalog = SymbolCatalog(Path(os.environ.get("MARKETBRIDGE_SYMBOL_DB", ROOT / "artifacts" / "nasdaq-symbols.sqlite3")))
+active_subscriptions = ActiveSubscriptions(TRACKED_SYMBOLS)
+pipeline = LivePipeline(ROOT / "artifacts" / "shadow-decisions.jsonl", active_subscriptions=active_subscriptions)
+risk_gateway = RiskGateway(ROOT, symbol_catalog=symbol_catalog)
+historical_market_data = HistoricalMarketDataService.from_environment()
 nonce_store = NonceStore(ttl_seconds=30)
 integration_limiter = SlidingWindowLimiter(limit=300, window_seconds=60)
 ws_limiter = SlidingWindowLimiter(limit=20, window_seconds=60)
@@ -50,6 +62,12 @@ ALLOWED_ORIGINS = _allowed_origins()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    try:
+        await asyncio.to_thread(symbol_catalog.ensure_fresh)
+    except Exception:
+        # Keep the last verified catalogue (or the built-in bootstrap set) when
+        # Nasdaq's public directory is temporarily unavailable.
+        pass
     pipeline.start()
     try:
         yield
@@ -59,8 +77,8 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="MarketBridge API",
-    version="0.3.0",
-    description="Advisory mark-integrity, fair-value and dynamic-risk layer for 24/7 equity perpetuals.",
+    version="1.0.0",
+    description="Market truth, exposure-aware order safety, and replayable proof for 24/7 equity perpetuals.",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -103,8 +121,8 @@ async def security_headers(request: Request, call_next):
 def health():
     return {
         "status": "ok",
-        "version": "0.3.0",
-        "data_modes": ["SYNTHETIC_TEST", "HISTORICAL_RECONSTRUCTION", "LIVE_RESEARCH", "SHADOW_ORACLE"],
+        "version": "1.0.0",
+        "data_modes": ["SYNTHETIC_DEMO", "SYNTHETIC_TEST", "HISTORICAL_RECONSTRUCTION", "LIVE_RESEARCH", "SHADOW_ORACLE"],
         "web_ready": (WEB / "index.html").exists(),
     }
 
@@ -180,6 +198,55 @@ def live_snapshot(refresh: bool = Query(default=False)):
     return get_live_snapshot(force=refresh)
 
 
+class ActiveSymbolRequest(BaseModel):
+    reason: str = Field(default="view", pattern="^(view|watchlist|position|order|recent)$")
+
+
+def _display_data_configured() -> bool:
+    return bool(os.environ.get("ALPACA_API_KEY", "").strip() and os.environ.get("ALPACA_SECRET_KEY", "").strip())
+
+
+@app.get("/v1/symbols")
+def nasdaq_symbols(
+    query: str = Query(default="", max_length=80),
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+):
+    items, total = symbol_catalog.search(query, limit=limit, offset=offset)
+    active = set(active_subscriptions.symbols(30))
+    return {
+        **symbol_catalog.status(),
+        "query": query,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "items": [item.as_json(active=item.symbol in active, display_data=_display_data_configured(), standard_policy=item.symbol in risk_gateway.assets) for item in items],
+    }
+
+
+@app.get("/v1/symbols/{symbol}")
+def nasdaq_symbol(symbol: str):
+    item = symbol_catalog.get(symbol)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Unknown Nasdaq symbol")
+    active = item.symbol in set(active_subscriptions.symbols(30))
+    return item.as_json(active=active, display_data=_display_data_configured(), standard_policy=item.symbol in risk_gateway.assets)
+
+
+@app.post("/v1/market/active-symbols/{symbol}")
+def activate_market_symbol(symbol: str, payload: ActiveSymbolRequest):
+    item = symbol_catalog.get(symbol)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Unknown Nasdaq symbol")
+    active_subscriptions.touch(item.symbol, payload.reason)
+    return {"accepted": True, "symbol": item.symbol, "reason": payload.reason, **active_subscriptions.snapshot()}
+
+
+@app.get("/v1/market/active-symbols")
+def market_active_symbols():
+    return active_subscriptions.snapshot()
+
+
 @app.get("/v1/news")
 def market_news(
     symbol: str | None = Query(default=None, min_length=1, max_length=8, pattern="^[A-Za-z]+$"),
@@ -188,6 +255,68 @@ def market_news(
     if normalized and normalized not in TRACKED_NEWS_SYMBOLS:
         raise HTTPException(status_code=404, detail="Unknown news symbol")
     return get_market_news(symbol=normalized)
+
+
+@app.get("/v1/kalshi/pulse")
+def kalshi_pulse(
+    symbol: str = Query(min_length=1, max_length=8, pattern="^[A-Za-z]+$"),
+):
+    """Public Kalshi event probabilities; never eligible as direct price evidence."""
+    normalized = symbol.upper()
+    if normalized not in TRACKED_KALSHI_SYMBOLS:
+        raise HTTPException(status_code=404, detail="Unknown Kalshi pulse symbol")
+    return get_kalshi_pulse(normalized)
+
+
+@app.get("/v1/market/bars/{symbol}")
+async def historical_bars(
+    symbol: str,
+    range_: Range = Query(default=Range.DAY_5, alias="range"),
+    resolution: Resolution | None = Query(default=None),
+    feed: str = Query(default="iex"),
+    adjustment: str = Query(default="raw"),
+    session: Session = Query(default=Session.REGULAR),
+    start: datetime | None = Query(default=None),
+    end: datetime | None = Query(default=None),
+):
+    """Sanitized display bars. This endpoint never feeds oracle qualification."""
+    try:
+        return await historical_market_data.bars(
+            symbol, selected_range=range_, resolution=resolution, feed=feed.lower(),
+            adjustment=adjustment.lower(), session=session, start=start, end=end,
+        )
+    except MarketDataError as exc:
+        raise HTTPException(status_code=exc.status_code, detail={"code": exc.code, "message": exc.message}) from exc
+
+
+@app.get("/v1/market/snapshots")
+async def display_snapshots(
+    symbols: str | None = Query(default=None, max_length=240),
+    feed: str = Query(default="iex"),
+):
+    """Batch display quotes for the curated universe; never oracle evidence."""
+    requested = tuple(dict.fromkeys(
+        item.strip().upper() for item in (symbols.split(",") if symbols else NASDAQ_STOCK_UNIVERSE) if item.strip()
+    ))
+    if len(requested) > 30 or any(symbol_catalog.get(symbol) is None for symbol in requested):
+        raise HTTPException(status_code=422, detail="Only the curated 30-stock Nasdaq universe is supported")
+    try:
+        snapshots = await historical_market_data.snapshots(requested, feed=feed.lower())
+    except MarketDataError as exc:
+        raise HTTPException(status_code=exc.status_code, detail={"code": exc.code, "message": exc.message}) from exc
+    return {
+        "provider": "alpaca", "feed": feed.lower(), "data_role": "DISPLAY_ONLY_NOT_ORACLE_EVIDENCE",
+        "items": [
+            {
+                "symbol": symbol,
+                "name": symbol_catalog.get(symbol).name,
+                "exchange": "NASDAQ",
+                "currency": "USD",
+                **snapshots[symbol],
+            }
+            for symbol in requested
+        ],
+    }
 
 
 @app.get("/v1/shadow/snapshot")
@@ -258,6 +387,13 @@ async def shadow_websocket(websocket: WebSocket):
 class MochatradeMarketEvent(BaseModel):
     symbol: str = Field(pattern="^(NVDA|TSLA|AAPL|MSFT|AMD)$")
     mark_price: float = Field(gt=0, lt=1_000_000)
+    oracle_price: float | None = Field(default=None, gt=0, lt=1_000_000)
+    mid_price: float | None = Field(default=None, gt=0, lt=1_000_000)
+    best_bid: float | None = Field(default=None, gt=0, lt=1_000_000)
+    best_ask: float | None = Field(default=None, gt=0, lt=1_000_000)
+    open_interest: float | None = Field(default=None, ge=0)
+    funding: float | None = Field(default=None, ge=-1, le=1)
+    volume: float | None = Field(default=None, ge=0)
     event_time: datetime
 
 
@@ -324,14 +460,101 @@ async def ingest_mochatrade_mark(
         raise HTTPException(status_code=422, detail="event_time cannot be in the future")
     if utc_event < now - timedelta(minutes=5):
         raise HTTPException(status_code=422, detail="event_time is too old")
-    if event.symbol not in TRACKED_SYMBOLS:
+    if symbol_catalog.get(event.symbol) is None:
         raise HTTPException(status_code=404, detail="Unknown symbol")
+    active_subscriptions.touch(event.symbol, "position")
     return {
         "accepted": True,
         "advisory_only": True,
-        "mark": pipeline.ingest_mochatrade(event.symbol, event.mark_price, event.event_time),
+        "mark": pipeline.ingest_mochatrade(
+            event.symbol,
+            event.mark_price,
+            event.event_time,
+            context={key: value for key, value in event.model_dump().items() if key not in {"symbol", "mark_price", "event_time"} and value is not None},
+        ),
         "decision": next((item for item in pipeline.snapshot()["decisions"] if item["symbol"] == event.symbol), None),
     }
+
+
+@app.post("/v1/integrations/mochatrade/risk-check")
+async def risk_check(
+    payload: RiskCheckRequest,
+    request: Request,
+    x_marketbridge_key: str | None = Header(default=None),
+    x_marketbridge_timestamp: str | None = Header(default=None),
+    x_marketbridge_nonce: str | None = Header(default=None),
+    x_marketbridge_signature: str | None = Header(default=None),
+):
+    """Return a short-lived advisory order action and Safety Passport."""
+    public_synthetic_demo = bool(
+        payload.demo_scenario and os.environ.get("MARKETBRIDGE_ENABLE_PUBLIC_DEMO") == "1"
+    )
+    if not public_synthetic_demo:
+        await _authenticate_integration(
+            request, x_marketbridge_key, x_marketbridge_timestamp, x_marketbridge_nonce, x_marketbridge_signature
+        )
+    now = datetime.now(timezone.utc)
+    if payload.market.event_time > now + timedelta(seconds=5):
+        raise HTTPException(status_code=422, detail="market.event_time cannot be in the future")
+    if symbol_catalog.get(payload.symbol) is not None:
+        active_subscriptions.touch(payload.symbol, "order")
+    started = time.perf_counter()
+    try:
+        response = risk_gateway.check(payload, pipeline.snapshot(), now=now)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Unsupported asset policy") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    observe_risk_check(response, payload.intent.kind.value, time.perf_counter() - started)
+    return response
+
+
+@app.get("/v1/passports/{passport_id}")
+def safety_passport(passport_id: str):
+    record = risk_gateway.passports.get(passport_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Safety Passport not found")
+    verified = PassportStore.verify(record.passport)
+    if not verified:
+        PASSPORT_VERIFICATION_FAILURE.inc()
+    expires_at = datetime.fromisoformat(
+        record.passport["claims"]["decision"]["expires_at"].replace("Z", "+00:00")
+    )
+    return {
+        **record.passport,
+        "verification_status": "VERIFIED" if verified else "FAILED",
+        "expired": datetime.now(timezone.utc) > expires_at,
+    }
+
+
+@app.post("/v1/replay/risk-decision")
+def replay_risk_decision(payload: ReplayRequest):
+    try:
+        result = risk_gateway.replay(payload.passport_id, payload.policy_version)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Safety Passport not found") from exc
+    if payload.policy_version != "WITHOUT_SAFETY_GATE" and not result["deterministic_parity"]:
+        REPLAY_MISMATCH.inc()
+    return result
+
+
+@app.post("/v1/passports/{passport_id}/outcome")
+async def record_passport_outcome(
+    passport_id: str,
+    payload: OutcomeRequest,
+    request: Request,
+    x_marketbridge_key: str | None = Header(default=None),
+    x_marketbridge_timestamp: str | None = Header(default=None),
+    x_marketbridge_nonce: str | None = Header(default=None),
+    x_marketbridge_signature: str | None = Header(default=None),
+):
+    await _authenticate_integration(
+        request, x_marketbridge_key, x_marketbridge_timestamp, x_marketbridge_nonce, x_marketbridge_signature
+    )
+    passport = risk_gateway.passports.record_outcome(passport_id, payload.outcome)
+    if passport is None:
+        raise HTTPException(status_code=404, detail="Safety Passport not found")
+    return passport
 
 
 @app.get("/v1/operator/decision/{scenario_id}")

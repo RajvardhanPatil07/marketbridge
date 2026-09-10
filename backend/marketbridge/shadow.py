@@ -27,6 +27,7 @@ from .evidence_store import EvidenceStore
 from .live import get_live_snapshot
 from .ml import MarketBridgeAI
 from .metrics import observe_decision
+from .symbols import ActiveSubscriptions, SYMBOL_PATTERN
 
 
 EQUITY_SYMBOLS = ("NVDA", "TSLA", "AAPL", "MSFT", "AMD")
@@ -53,15 +54,47 @@ class AlpacaStreamError(RuntimeError):
         self.permanent = permanent
 
 
+class TwelveDataStreamError(RuntimeError):
+    """Safe Twelve Data stream failure that never contains credentials."""
+
+    def __init__(self, status: str, detail: str, *, code: object = "unknown", permanent: bool = False):
+        super().__init__(detail[:160])
+        self.status = status
+        self.detail = detail[:160]
+        self.code = str(code)
+        self.permanent = permanent
+
+
 def _classify_alpaca_error(event: dict, *, authenticated: bool) -> AlpacaStreamError:
     detail = str(event.get("msg") or "Alpaca stream error")[:160]
     normalized = detail.lower()
     code = event.get("code", "unknown")
+    if str(code) == "406" or "connection limit" in normalized:
+        return AlpacaStreamError("RATE_LIMITED", "Alpaca live connection limit reached", code=code)
     if "insufficient subscription" in normalized or "not subscribed" in normalized:
         return AlpacaStreamError("ENTITLEMENT_ERROR", detail, code=code, permanent=True)
     if not authenticated or str(code) in {"401", "402", "403"}:
         return AlpacaStreamError("AUTH_ERROR", detail, code=code, permanent=True)
     return AlpacaStreamError("STREAM_ERROR", detail, code=code)
+
+
+def _classify_twelve_data_error(event: dict) -> TwelveDataStreamError:
+    """Classify provider errors without copying request URLs or credentials."""
+    code = event.get("code") or event.get("status") or "unknown"
+    message = str(event.get("message") or event.get("detail") or "Twelve Data stream error")
+    normalized = message.lower()
+    if any(token in normalized for token in ("api key", "unauthorized", "authentication")):
+        return TwelveDataStreamError(
+            "AUTH_ERROR", "Twelve Data rejected the configured API key", code=code, permanent=True
+        )
+    if any(token in normalized for token in ("plan", "credit", "symbol", "subscribe")):
+        return TwelveDataStreamError(
+            "ENTITLEMENT_ERROR",
+            "Twelve Data did not authorize the requested symbol subscription",
+            code=code,
+            permanent=True,
+        )
+    return TwelveDataStreamError("STREAM_ERROR", "Twelve Data stream returned an error", code=code)
 
 
 def probe_alpaca_subscription(connect_fn=None) -> dict:
@@ -232,6 +265,7 @@ class ShadowOracle:
         self,
         audit_sink: Callable[[dict], None] | None = None,
         ai: MarketBridgeAI | None = None,
+        supported_symbol: Callable[[str], bool] | None = None,
     ):
         self._latest: dict[str, dict[str, NormalizedObservation]] = {}
         self._marks: dict[str, dict] = {}
@@ -249,7 +283,12 @@ class ShadowOracle:
         self._lock = Lock()
         self._changed = Condition(self._lock)
         self._audit_sink = audit_sink
+        self._supported_symbol = supported_symbol or (lambda symbol: symbol in TRACKED_SYMBOLS)
         self.ai = ai or MarketBridgeAI.from_environment()
+
+    @staticmethod
+    def _is_equity(symbol: str) -> bool:
+        return symbol not in FACTOR_SYMBOLS
 
     def ai_status(self) -> dict:
         status = self.ai.status()
@@ -259,7 +298,7 @@ class ShadowOracle:
         return status
 
     def ingest(self, observation: NormalizedObservation) -> dict:
-        if observation.symbol not in TRACKED_SYMBOLS:
+        if not self._supported_symbol(observation.symbol):
             raise ValueError(f"unsupported symbol: {observation.symbol}")
         if not math.isfinite(observation.price) or observation.price <= 0:
             raise ValueError("observation price must be positive and finite")
@@ -276,16 +315,18 @@ class ShadowOracle:
             self._latencies.append(decision["decision_latency_ms"])
             self._source_age_ms.append(source_age_ms)
             self._decisions[observation.symbol] = decision
-            if observation.symbol in EQUITY_SYMBOLS:
+            if self._is_equity(observation.symbol):
                 self._history.appendleft(decision)
             self._generation += 1
             self._changed.notify_all()
-        if self._audit_sink and observation.symbol in EQUITY_SYMBOLS:
+        if self._audit_sink and self._is_equity(observation.symbol):
             self._audit_sink(decision)
         return decision
 
-    def update_venue_mark(self, symbol: str, price: float, event_time: datetime) -> dict:
-        if symbol not in EQUITY_SYMBOLS:
+    def update_venue_mark(
+        self, symbol: str, price: float, event_time: datetime, *, context: dict | None = None
+    ) -> dict:
+        if not self._supported_symbol(symbol) or not self._is_equity(symbol):
             raise ValueError(f"unsupported venue-mark symbol: {symbol}")
         if not math.isfinite(price) or price <= 0:
             raise ValueError("mark price must be positive and finite")
@@ -295,6 +336,7 @@ class ShadowOracle:
             mark = {
                 "price": price,
                 "event_time": _iso(event_time),
+                **(context or {}),
             }
             self._marks[symbol] = mark
             public_mark = self._mark_view(mark, event_time)
@@ -769,7 +811,7 @@ class ShadowOracle:
             self._anchor_time[symbol] = now
             if symbol in FACTOR_SYMBOLS:
                 self._factor_reference[symbol] = qualified_candidate
-            elif symbol in EQUITY_SYMBOLS:
+            elif self._is_equity(symbol):
                 self._stock_factor_anchor[symbol] = dict(self._factor_reference)
 
         if any(not row["eligible"] for row in evidence):
@@ -828,8 +870,8 @@ class ShadowOracle:
                 "generation": self._generation,
                 "decisions": [
                     self._decision_view(self._decisions[symbol], now)
-                    for symbol in EQUITY_SYMBOLS
-                    if symbol in self._decisions
+                    for symbol in sorted(self._decisions)
+                    if self._is_equity(symbol)
                 ],
                 "decision_log": list(self._history)[:60],
                 "latency": {
@@ -854,13 +896,17 @@ class ShadowOracle:
 class LivePipeline:
     """Own provider adapters, audit persistence and the shadow-oracle lifecycle."""
 
-    def __init__(self, audit_path: Path):
+    def __init__(self, audit_path: Path, *, active_subscriptions: ActiveSubscriptions | None = None):
         self.tracked_symbols = TRACKED_SYMBOLS
+        self.active_subscriptions = active_subscriptions or ActiveSubscriptions(TRACKED_SYMBOLS)
         self._stop = Event()
         self._threads: list[Thread] = []
         self._audit_queue: SimpleQueue[dict | None] = SimpleQueue()
         self._audit_path = audit_path
-        self.oracle = ShadowOracle(self._audit_queue.put)
+        self.oracle = ShadowOracle(
+            self._audit_queue.put,
+            supported_symbol=lambda symbol: symbol in set(self.active_subscriptions.symbols(30)),
+        )
         self._provider_status = {
             "yahoo": {"status": "STARTING", "kind": "RESEARCH", "detail": "Background bootstrap"},
             "alpaca": {
@@ -877,6 +923,14 @@ class LivePipeline:
                 "detail": "Set DATABENTO_API_KEY for EQUS.MINI MBP-1",
                 "qualification_capable": False,
             },
+            "twelve-data": {
+                "status": "DISABLED",
+                "kind": "DIRECT_MARKET",
+                "detail": "Set TWELVE_DATA_API_KEY for the quotes/price stream",
+                "qualification_capable": False,
+                "retry_count": 0,
+                "consecutive_failures": 0,
+            },
             "hyperliquid": {
                 "status": "DISABLED",
                 "kind": "VENUE_MARK",
@@ -887,12 +941,28 @@ class LivePipeline:
         self._yahoo: dict | None = None
         self._last_yahoo_event: dict[str, str] = {}
         self._alpaca_quotes: dict[str, dict] = {}
+        self._alpaca_bars: dict[str, dict[str, dict]] = {}
         self._last_alpaca_event: dict[tuple[str, str], datetime] = {}
         self._seen_alpaca_trade_ids: set[tuple[str, str]] = set()
         self._alpaca_trade_order: deque[tuple[str, str]] = deque(maxlen=10_000)
         self._started = False
         self._state_lock = Lock()
         self._databento_symbols: dict[int, str] = {}
+        self._hyperliquid_context: dict[str, dict] = {}
+
+    @staticmethod
+    def _subscription_limit(name: str, default: int) -> int:
+        try:
+            return max(1, int(os.environ.get(name, str(default))))
+        except ValueError:
+            return default
+
+    def _active_symbols(self, provider: str) -> tuple[str, ...]:
+        limit = self._subscription_limit(
+            "ALPACA_LIVE_SYMBOL_LIMIT" if provider == "alpaca" else "TWELVE_DATA_LIVE_SYMBOL_LIMIT",
+            30 if provider == "alpaca" else 8,
+        )
+        return self.active_subscriptions.symbols(limit)
 
     def configuration(self) -> dict:
         api_key = bool(os.environ.get("ALPACA_API_KEY", "").strip())
@@ -908,6 +978,7 @@ class LivePipeline:
             alpaca_errors.append("ALPACA_FEED_UNSUPPORTED")
         credentials_configured = api_key and secret_key
         databento_configured = bool(os.environ.get("DATABENTO_API_KEY", "").strip())
+        twelve_data_configured = bool(os.environ.get("TWELVE_DATA_API_KEY", "").strip())
         qualification_capable = credentials_configured and feed in ALPACA_MULTI_VENUE_FEEDS
         if credentials_configured and feed == "iex":
             warnings.append("ALPACA_IEX_SINGLE_VENUE")
@@ -945,8 +1016,12 @@ class LivePipeline:
 
         errors = [*errors, *alpaca_errors, *hyperliquid_errors]
 
+        execution_evidence_configured = qualification_capable or (
+            credentials_configured and (databento_configured or twelve_data_configured)
+        )
         return {
             "strict_live_data": _env_enabled("MARKETBRIDGE_REQUIRE_LIVE_DATA"),
+            "execution_evidence_configured": execution_evidence_configured,
             "alpaca": {
                 "credentials_configured": credentials_configured,
                 "feed": feed,
@@ -961,6 +1036,13 @@ class LivePipeline:
                 "qualification_capable": databento_configured,
                 "errors": [],
             },
+            "twelve_data": {
+                "credentials_configured": twelve_data_configured,
+                "endpoint": "quotes/price",
+                "tracked_symbols": len(self._active_symbols("twelve-data")),
+                "qualification_capable": twelve_data_configured,
+                "errors": [],
+            },
             "hyperliquid_configured": bool(coin_map),
             "hyperliquid_errors": hyperliquid_errors,
             "thresholds": thresholds,
@@ -973,8 +1055,10 @@ class LivePipeline:
         if self._started:
             return
         configuration = self.configuration()
-        if configuration["strict_live_data"] and not configuration["alpaca"]["qualification_capable"]:
-            raise RuntimeError("strict live-data mode requires authenticated multi-venue Alpaca feed configuration")
+        if configuration["strict_live_data"] and not configuration["execution_evidence_configured"]:
+            raise RuntimeError(
+                "strict live-data mode requires multi-venue Alpaca or Alpaca plus an independent provider"
+            )
         if configuration["strict_live_data"] and configuration["errors"]:
             raise RuntimeError("strict live-data configuration is invalid: " + ",".join(configuration["errors"]))
         self._started = True
@@ -1013,6 +1097,18 @@ class LivePipeline:
                 "qualification_capable": True,
             }
             self._threads.append(Thread(target=self._databento_loop, name="marketbridge-databento", daemon=True))
+        if configuration["twelve_data"]["credentials_configured"]:
+            self._provider_status["twelve-data"] = {
+                "status": "CONNECTING",
+                "kind": "DIRECT_MARKET",
+                "detail": "quotes/price WebSocket",
+                "qualification_capable": True,
+                "retry_count": 0,
+                "consecutive_failures": 0,
+            }
+            self._threads.append(
+                Thread(target=self._twelve_data_loop, name="marketbridge-twelve-data", daemon=True)
+            )
         if configuration["hyperliquid_configured"] and not configuration["hyperliquid_errors"]:
             self._provider_status["hyperliquid"] = {
                 "status": "CONNECTING",
@@ -1122,8 +1218,19 @@ class LivePipeline:
                             }
                         )
                     )
-                    session = {"authenticated": False, "subscription_sent": False, "subscribed": False}
-                    for message in socket:
+                    session: dict[str, object] = {
+                        "authenticated": False, "subscription_sent": False, "subscribed": False,
+                        "requested_symbols": set(), "subscribed_symbols": set(),
+                    }
+                    while not self._stop.is_set():
+                        if session["authenticated"]:
+                            self._reconcile_alpaca_subscriptions(socket, session)
+                        try:
+                            message = socket.recv(timeout=1)
+                        except TimeoutError:
+                            continue
+                        if message is None:
+                            raise RuntimeError("Alpaca WebSocket closed")
                         if self._stop.is_set():
                             return
                         received_at = datetime.now(timezone.utc)
@@ -1277,6 +1384,189 @@ class LivePipeline:
             venue_family="databento-equs-mini",
         )
 
+    def _twelve_data_loop(self) -> None:
+        """Consume Twelve Data price ticks as one independent provider witness."""
+        from websockets.sync.client import connect
+
+        # Twelve Data requires the credential in its WebSocket URL. Never log the
+        # URL or raw connection exception because either may contain the key.
+        api_key = os.environ["TWELVE_DATA_API_KEY"]
+        url = f"wss://ws.twelvedata.com/v1/quotes/price?apikey={api_key}"
+        backoff = 1
+        while not self._stop.is_set():
+            try:
+                connected_at = datetime.now(timezone.utc)
+                self._set_provider(
+                    "twelve-data",
+                    status="CONNECTING",
+                    connection_time=_iso(connected_at),
+                    permanent_error=False,
+                )
+                with connect(url, open_timeout=8, close_timeout=2) as socket:
+                    requested = set(self._active_symbols("twelve-data"))
+                    socket.send(json.dumps({"action": "subscribe", "params": {"symbols": ",".join(sorted(requested))}}))
+                    session: dict[str, object] = {"subscribed_symbols": set(), "requested_symbols": requested}
+                    while not self._stop.is_set():
+                        desired = set(self._active_symbols("twelve-data"))
+                        if desired != session["requested_symbols"]:
+                            socket.send(json.dumps({"action": "reset"}))
+                            socket.send(json.dumps({"action": "subscribe", "params": {"symbols": ",".join(sorted(desired))}}))
+                            session["requested_symbols"] = desired
+                        try:
+                            message = socket.recv(timeout=2)
+                        except TimeoutError:
+                            socket.send(json.dumps({"action": "heartbeat"}))
+                            continue
+                        if message is None:
+                            raise RuntimeError("Twelve Data WebSocket closed")
+                        received_at = datetime.now(timezone.utc)
+                        self._set_provider("twelve-data", last_message_time=_iso(received_at))
+                        payload = json.loads(message)
+                        self._handle_twelve_data_event(payload, session, received_at)
+                        if session["subscribed_symbols"]:
+                            backoff = 1
+                raise RuntimeError("Twelve Data WebSocket closed")
+            except TwelveDataStreamError as exc:
+                current = self._provider_status.get("twelve-data", {})
+                retries = int(current.get("retry_count", 0))
+                self._set_provider(
+                    "twelve-data",
+                    status=exc.status,
+                    detail=exc.detail,
+                    last_error_time=_iso(datetime.now(timezone.utc)),
+                    last_error_code=exc.code,
+                    permanent_error=exc.permanent,
+                    consecutive_failures=int(current.get("consecutive_failures", 0)) + 1,
+                    retry_count=retries,
+                )
+                if exc.permanent:
+                    return
+                self._set_provider("twelve-data", status="RECONNECTING", retry_count=retries + 1)
+                self._stop.wait(backoff)
+                backoff = min(15, backoff * 2)
+            except Exception as exc:
+                current = self._provider_status.get("twelve-data", {})
+                retries = int(current.get("retry_count", 0)) + 1
+                self._set_provider(
+                    "twelve-data",
+                    status="RECONNECTING",
+                    detail="Twelve Data stream connection failed",
+                    last_error_time=_iso(datetime.now(timezone.utc)),
+                    last_error_code=type(exc).__name__,
+                    permanent_error=False,
+                    retry_count=retries,
+                    consecutive_failures=int(current.get("consecutive_failures", 0)) + 1,
+                )
+                logger.warning(
+                    "market_data_provider_event provider=twelve-data status=RECONNECTING "
+                    "retry_count=%d error_code=%s",
+                    retries,
+                    type(exc).__name__,
+                )
+                self._stop.wait(backoff)
+                backoff = min(15, backoff * 2)
+
+    @staticmethod
+    def _normalized_twelve_data_price(
+        symbol: str,
+        price: float,
+        event_time: datetime,
+        received_at: datetime,
+        exchange: str | None = None,
+    ) -> NormalizedObservation | None:
+        if not SYMBOL_PATTERN.fullmatch(symbol) or not math.isfinite(price) or price <= 0:
+            return None
+        if event_time > received_at + timedelta(seconds=5) or received_at - event_time > timedelta(seconds=30):
+            return None
+        return NormalizedObservation(
+            symbol=symbol,
+            price=price,
+            event_time=event_time,
+            received_at=received_at,
+            source_id="twelve-data-quotes-price",
+            source_family="twelve-data-us-equities",
+            venue=exchange or "TWELVE_DATA.US_EQUITIES",
+            eligible=True,
+            provider_family="twelve-data",
+            # It remains one vendor feed even when the payload names an exchange.
+            venue_family="twelve-data-us-equities",
+        )
+
+    def _handle_twelve_data_event(
+        self, payload: dict, session: dict[str, object], received_at: datetime
+    ) -> int:
+        """Validate one Twelve Data event and ingest at most one observation."""
+        if not isinstance(payload, dict):
+            raise TwelveDataStreamError("STREAM_ERROR", "Twelve Data returned a malformed payload")
+        event = str(payload.get("event") or "")
+        if event == "subscribe-status":
+            failures = payload.get("fails") or []
+            successes = payload.get("success") or []
+            if isinstance(successes, dict):
+                successes = [successes]
+            subscribed = {
+                str(row.get("symbol", "")).upper()
+                for row in successes
+                if isinstance(row, dict) and SYMBOL_PATTERN.fullmatch(str(row.get("symbol", "")).upper())
+            }
+            if failures and not subscribed:
+                raise TwelveDataStreamError(
+                    "ENTITLEMENT_ERROR",
+                    "Twelve Data did not authorize the requested symbol subscription",
+                    code=payload.get("status", "subscription_failed"),
+                    permanent=True,
+                )
+            session["subscribed_symbols"] = subscribed
+            status = "AVAILABLE" if subscribed else "LIMITED"
+            self._set_provider(
+                "twelve-data",
+                status=status,
+                detail=f"quotes/price: {len(subscribed)}/{len(session.get('requested_symbols', set()))} symbols subscribed",
+                qualification_capable=bool(subscribed),
+                auth_time=_iso(received_at),
+                subscription_time=_iso(received_at),
+                last_message_time=_iso(received_at),
+                retry_count=0,
+                consecutive_failures=0,
+                permanent_error=False,
+            )
+            return 0
+        if event == "error" or str(payload.get("status", "")).lower() in {"error", "failed"}:
+            raise _classify_twelve_data_error(payload)
+        if event != "price":
+            return 0
+        symbol = str(payload.get("symbol") or "").upper()
+        subscribed_symbols = session.get("subscribed_symbols")
+        if not isinstance(subscribed_symbols, set) or symbol not in subscribed_symbols:
+            return 0
+        try:
+            price = float(payload["price"])
+            event_time = datetime.fromtimestamp(float(payload["timestamp"]), timezone.utc)
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return 0
+        observation = self._normalized_twelve_data_price(
+            symbol,
+            price,
+            event_time,
+            received_at,
+            str(payload.get("exchange") or "") or None,
+        )
+        if observation is None:
+            return 0
+        decision = self.oracle.ingest(observation)
+        values = {
+            "status": "AVAILABLE",
+            "detail": "quotes/price WebSocket",
+            "qualification_capable": True,
+            "last_event_time": _iso(event_time),
+            "last_trade_time": _iso(received_at),
+            "last_message_time": _iso(received_at),
+        }
+        if decision["status"] == "QUALIFIED":
+            values["last_qualified_evidence_time"] = _iso(received_at)
+        self._set_provider("twelve-data", **values)
+        return 1
+
     def _set_provider(self, provider: str, **values) -> None:
         with self._state_lock:
             current = self._provider_status.get(provider, {})
@@ -1294,7 +1584,7 @@ class LivePipeline:
 
     def _record_alpaca_quote(self, event: dict, received_at: datetime) -> None:
         symbol = event.get("S")
-        if symbol not in TRACKED_SYMBOLS:
+        if symbol not in set(self._active_symbols("alpaca")):
             return
         try:
             bid = float(event["bp"])
@@ -1316,7 +1606,7 @@ class LivePipeline:
     ) -> NormalizedObservation | None:
         symbol = event.get("S")
         venue = str(event.get("x") or "UNKNOWN")
-        if symbol not in TRACKED_SYMBOLS or venue == "UNKNOWN":
+        if symbol not in set(self._active_symbols("alpaca")) or venue == "UNKNOWN":
             return None
         try:
             price = float(event["p"])
@@ -1366,12 +1656,32 @@ class LivePipeline:
             venue_family=venue,
         )
 
+    def _reconcile_alpaca_subscriptions(self, socket, session: dict[str, object]) -> None:
+        desired = set(self._active_symbols("alpaca"))
+        requested = session.get("requested_symbols", set())
+        if not isinstance(requested, set) or desired == requested:
+            return
+        removed, added = requested - desired, desired - requested
+        if removed:
+            socket.send(json.dumps({
+                "action": "unsubscribe", "trades": sorted(removed), "quotes": sorted(removed),
+                "bars": sorted(removed), "updatedBars": sorted(removed), "dailyBars": sorted(removed),
+            }))
+        if added:
+            socket.send(json.dumps({
+                "action": "subscribe", "trades": sorted(added), "quotes": sorted(added),
+                "bars": sorted(added), "updatedBars": sorted(added), "dailyBars": sorted(added),
+            }))
+        session["requested_symbols"] = desired
+        session["subscribed"] = False
+        session["reconciling"] = True
+
     def _handle_alpaca_events(
         self,
         events: list[dict],
         socket,
         feed: str,
-        session: dict[str, bool],
+        session: dict[str, object],
         received_at: datetime,
     ) -> int:
         ingested = 0
@@ -1398,20 +1708,34 @@ class LivePipeline:
                     last_message_time=_iso(received_at),
                 )
                 if not session["subscription_sent"]:
+                    ordered_symbols = self._active_symbols("alpaca")
+                    requested = set(ordered_symbols)
                     socket.send(
                         json.dumps(
                             {
                                 "action": "subscribe",
-                                "trades": list(TRACKED_SYMBOLS),
-                                "quotes": list(TRACKED_SYMBOLS),
+                                "trades": list(ordered_symbols),
+                                "quotes": list(ordered_symbols),
+                                "bars": list(ordered_symbols),
+                                "updatedBars": list(ordered_symbols),
+                                "dailyBars": list(ordered_symbols),
                             }
                         )
                     )
                     session["subscription_sent"] = True
+                    session["requested_symbols"] = requested
                 continue
             if event_type == "subscription":
                 subscribed = set(event.get("trades") or [])
-                if not session["authenticated"] or not set(TRACKED_SYMBOLS).issubset(subscribed):
+                requested = session.get("requested_symbols", set(self.tracked_symbols))
+                if (
+                    session.get("reconciling")
+                    and isinstance(requested, set)
+                    and not requested.issubset(subscribed)
+                ):
+                    session["subscribed_symbols"] = subscribed
+                    continue
+                if not session["authenticated"] or not isinstance(requested, set) or not requested.issubset(subscribed):
                     raise AlpacaStreamError(
                         "SUBSCRIPTION_ERROR",
                         "Alpaca subscription acknowledgment is incomplete",
@@ -1419,6 +1743,8 @@ class LivePipeline:
                         permanent=True,
                     )
                 session["subscribed"] = True
+                session["subscribed_symbols"] = subscribed
+                session["reconciling"] = False
                 capable = feed in ALPACA_MULTI_VENUE_FEEDS
                 self._set_provider(
                     "alpaca",
@@ -1439,6 +1765,9 @@ class LivePipeline:
             if event_type == "q" and session["subscribed"]:
                 self._record_alpaca_quote(event, received_at)
                 continue
+            if event_type in {"b", "u", "d"} and session["subscribed"]:
+                self._record_alpaca_bar(event, event_type, feed, received_at)
+                continue
             if event_type != "t" or not session["subscribed"]:
                 continue
             observation = self._normalized_alpaca_trade(event, feed, received_at)
@@ -1456,8 +1785,43 @@ class LivePipeline:
             self._set_provider("alpaca", **values)
         return ingested
 
+    def _record_alpaca_bar(self, event: dict, event_type: str, feed: str, received_at: datetime) -> None:
+        """Retain a bounded, sanitized live-bar view for browser reconciliation.
+
+        Updated bars replace a prior timestamp. They remain display data and never
+        enter the evidence firewall through this method.
+        """
+        symbol = str(event.get("S", ""))
+        if symbol not in set(self._active_symbols("alpaca")):
+            return
+        try:
+            timestamp = _utc(event["t"])
+            bar = {
+                "timestamp": _iso(timestamp),
+                "open": float(event["o"]),
+                "high": float(event["h"]),
+                "low": float(event["l"]),
+                "close": float(event["c"]),
+                "volume": float(event["v"]),
+                "vwap": float(event["vw"]) if event.get("vw") is not None else None,
+                "trade_count": int(event["n"]) if event.get("n") is not None else None,
+                "kind": {"b": "BAR", "u": "CORRECTED_BAR", "d": "DAILY_BAR"}[event_type],
+                "provider": "alpaca",
+                "feed": feed,
+                "received_at": _iso(received_at),
+                "data_role": "DISPLAY_ONLY_NOT_ORACLE_EVIDENCE",
+            }
+        except (KeyError, TypeError, ValueError):
+            return
+        with self._state_lock:
+            by_timestamp = self._alpaca_bars.setdefault(symbol, {})
+            by_timestamp[bar["timestamp"]] = bar
+            if len(by_timestamp) > 500:
+                for key in sorted(by_timestamp)[:-500]:
+                    del by_timestamp[key]
+
     def _hyperliquid_loop(self) -> None:
-        """Observe configured Hyperliquid asset contexts as venue marks."""
+        """Observe read-only venue context; its fields remain one witness."""
         from websockets.sync.client import connect
 
         coin_map = json.loads(os.environ["HYPERLIQUID_COIN_MAP"])
@@ -1467,11 +1831,8 @@ class LivePipeline:
             try:
                 with connect("wss://api.hyperliquid.xyz/ws", open_timeout=8, close_timeout=2) as socket:
                     for coin in reverse:
-                        socket.send(
-                            json.dumps(
-                                {"method": "subscribe", "subscription": {"type": "activeAssetCtx", "coin": coin}}
-                            )
-                        )
+                        for channel in ("activeAssetCtx", "bbo", "trades"):
+                            socket.send(json.dumps({"method": "subscribe", "subscription": {"type": channel, "coin": coin}}))
                     with self._state_lock:
                         self._provider_status["hyperliquid"] = {
                             "status": "AVAILABLE",
@@ -1483,20 +1844,55 @@ class LivePipeline:
                         if self._stop.is_set():
                             return
                         payload = json.loads(message)
-                        if payload.get("channel") != "activeAssetCtx":
-                            continue
+                        channel = payload.get("channel")
                         data = payload.get("data") or {}
-                        coin = data.get("coin")
-                        ctx = data.get("ctx") or {}
+                        rows = data if isinstance(data, list) else [data]
+                        coin = rows[0].get("coin") if rows and isinstance(rows[0], dict) else None
                         symbol = reverse.get(coin)
+                        if not symbol:
+                            continue
+                        received_at = datetime.now(timezone.utc)
+                        context = self._hyperliquid_context.setdefault(symbol, {"recent_trades": []})
+                        if channel == "bbo":
+                            levels = data.get("bbo") or []
+                            if len(levels) >= 2:
+                                context["best_bid"] = float(levels[0][0])
+                                context["best_ask"] = float(levels[1][0])
+                                context["spread"] = context["best_ask"] - context["best_bid"]
+                            continue
+                        if channel == "trades":
+                            for trade in rows[-20:]:
+                                try:
+                                    context["recent_trades"].append({
+                                        "price": float(trade["px"]), "size": float(trade["sz"]),
+                                        "side": trade.get("side"), "time": trade.get("time"),
+                                    })
+                                except (KeyError, TypeError, ValueError):
+                                    continue
+                            context["recent_trades"] = context["recent_trades"][-20:]
+                            continue
+                        if channel != "activeAssetCtx":
+                            continue
+                        ctx = data.get("ctx") or {}
                         mark = ctx.get("markPx")
-                        if symbol and mark:
-                            self.ingest_mochatrade(
-                                symbol,
-                                float(mark),
-                                datetime.now(timezone.utc),
-                                source="hyperliquid",
-                            )
+                        if not mark:
+                            continue
+                        for upstream, normalized in (
+                            ("oraclePx", "oracle_price"), ("midPx", "mid_price"),
+                            ("openInterest", "open_interest"), ("funding", "funding"),
+                            ("dayNtlVlm", "volume"),
+                        ):
+                            if ctx.get(upstream) is not None:
+                                context[normalized] = float(ctx[upstream])
+                        context.update({
+                            "received_at": _iso(received_at), "latency_ms": 0.0,
+                            "clock_skew_ms": 0.0, "sequence_gap": False,
+                            "reconnect_state": "CONNECTED", "venue_family": "hyperliquid",
+                            "independence_note": "VENUE_CONTEXT_NOT_INDEPENDENT_EVIDENCE",
+                        })
+                        self.ingest_mochatrade(
+                            symbol, float(mark), received_at, source="hyperliquid", context=dict(context)
+                        )
             except Exception as exc:
                 with self._state_lock:
                     self._provider_status["hyperliquid"] = {
@@ -1558,8 +1954,19 @@ class LivePipeline:
         mark_price: float,
         event_time: datetime,
         source: str = "mochatrade",
+        context: dict | None = None,
     ) -> dict:
-        mark = self.oracle.update_venue_mark(symbol, mark_price, event_time)
+        received_at = datetime.now(timezone.utc)
+        safe_context = {
+            **(context or {}),
+            "received_at": (context or {}).get("received_at", _iso(received_at)),
+            "latency_ms": (context or {}).get(
+                "latency_ms", max(0.0, (received_at - _utc(event_time)).total_seconds() * 1000)
+            ),
+            "venue_family": (context or {}).get("venue_family", source),
+            "independence_note": "VENUE_CONTEXT_NOT_INDEPENDENT_EVIDENCE",
+        }
+        mark = self.oracle.update_venue_mark(symbol, mark_price, event_time, context=safe_context)
         with self._state_lock:
             self._provider_status[source] = {
                 "status": "AVAILABLE",
@@ -1618,7 +2025,11 @@ class LivePipeline:
                     provider["fresh"] = False
                 providers.append(provider)
             yahoo = self._yahoo
-        return {"providers": providers, "yahoo": yahoo}
+            live_bars = {
+                symbol: [rows[key] for key in sorted(rows)]
+                for symbol, rows in self._alpaca_bars.items()
+            }
+        return {"providers": providers, "yahoo": yahoo, "live_bars": live_bars}
 
     @staticmethod
     def _market_health(started: bool, oracle_snapshot: dict, providers: list[dict]) -> dict:

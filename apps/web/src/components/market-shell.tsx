@@ -6,6 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, BarChart3, BriefcaseBusiness, Command, Newspaper, PanelsTopLeft, Search, Sparkles, Star, X } from "lucide-react";
 import { useMarketData } from "@/components/market-data-provider";
 import { money, percent, TRACKED_SYMBOLS } from "@/lib/market";
+import type { NasdaqSearchResponse, NasdaqSymbol } from "@/lib/types";
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
 
 const navigation = [
   { href: "/markets/", label: "Markets", icon: BarChart3 }, { href: "/screener/", label: "Screener", icon: Activity },
@@ -26,10 +29,19 @@ function MarketStrip() {
 }
 
 function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { assets } = useMarketData(); const [query, setQuery] = useState(""); const [activeIndex, setActiveIndex] = useState(0); const inputRef = useRef<HTMLInputElement>(null); const dialogRef = useRef<HTMLElement>(null); const router = useRouter();
-  const results = useMemo(() => assets.filter((asset) => `${asset.symbol} ${asset.name}`.toLowerCase().includes(query.toLowerCase())).slice(0, 8), [assets, query]);
-  const openAsset = (index: number) => { const asset = results[index]; if (!asset) return; router.push(`/asset/${asset.symbol.toLowerCase()}/`); onClose(); };
+  const { assets } = useMarketData(); const [query, setQuery] = useState(""); const [activeIndex, setActiveIndex] = useState(0); const [catalogue, setCatalogue] = useState<NasdaqSymbol[]>([]); const [searching, setSearching] = useState(false); const inputRef = useRef<HTMLInputElement>(null); const dialogRef = useRef<HTMLElement>(null); const router = useRouter();
+  const liveBySymbol = useMemo(() => new Map(assets.map((asset) => [asset.symbol, asset])), [assets]);
+  const results = useMemo(() => catalogue.map((item) => ({ ...item, live: liveBySymbol.get(item.symbol) })), [catalogue, liveBySymbol]);
+  const openAsset = (index: number) => { const asset = results[index]; if (!asset) return; router.push(`/asset/explore/?symbol=${encodeURIComponent(asset.symbol)}`); onClose(); };
   useEffect(() => { if (open) { setQuery(""); setActiveIndex(0); requestAnimationFrame(() => inputRef.current?.focus()); } }, [open]);
+  useEffect(() => {
+    if (!open) return; const controller = new AbortController(); const timer = window.setTimeout(async () => {
+      setSearching(true);
+      try { const response = await fetch(`${API_BASE}/v1/symbols?query=${encodeURIComponent(query)}&limit=10`, { signal: controller.signal, cache: "no-store" }); if (response.ok) setCatalogue(((await response.json()) as NasdaqSearchResponse).items); }
+      finally { if (!controller.signal.aborted) setSearching(false); }
+    }, query ? 140 : 0);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [open, query]);
   useEffect(() => { setActiveIndex(0); }, [query]);
   if (!open) return null;
   return <div className="command-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section ref={dialogRef} className="command-dialog" role="dialog" aria-modal="true" aria-label="Search markets" onKeyDown={(event) => {
@@ -37,7 +49,7 @@ function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void })
     if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => results.length ? (index + (event.key === "ArrowDown" ? 1 : -1) + results.length) % results.length : 0); return; }
     if (event.key === "Enter" && document.activeElement === inputRef.current) { event.preventDefault(); openAsset(activeIndex); return; }
     if (event.key === "Tab") { const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>("input, button:not([disabled])") ?? []); if (!focusable.length) return; const first = focusable[0]; const last = focusable.at(-1)!; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } }
-  }}><div className="command-input"><Search size={18}/><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search symbol or company" aria-label="Search symbol or company" aria-controls="market-search-results" aria-activedescendant={results[activeIndex] ? `market-result-${results[activeIndex].symbol}` : undefined}/><button onClick={onClose} aria-label="Close search"><X size={17}/></button></div><div id="market-search-results" className="command-results" role="listbox">{results.length ? results.map((asset, index) => <button id={`market-result-${asset.symbol}`} key={asset.symbol} className={index === activeIndex ? "active" : ""} role="option" aria-selected={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => openAsset(index)}><span className="symbol-avatar">{asset.symbol.slice(0, 1)}</span><span><strong>{asset.symbol}</strong><small>{asset.name}</small></span><span className="command-enter">↵</span></button>) : <div className="command-empty">{query ? "No supported asset matches this search." : "Search assets currently provided by MarketBridge."}</div>}</div></section></div>;
+  }}><div className="command-input"><Search size={18}/><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all Nasdaq symbols" aria-label="Search all Nasdaq symbols" aria-controls="market-search-results" aria-activedescendant={results[activeIndex] ? `market-result-${results[activeIndex].symbol}` : undefined}/><button onClick={onClose} aria-label="Close search"><X size={17}/></button></div><div id="market-search-results" className="command-results" role="listbox">{results.length ? results.map((asset, index) => <button id={`market-result-${asset.symbol}`} key={asset.symbol} className={index === activeIndex ? "active" : ""} role="option" aria-selected={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => openAsset(index)}><span className="symbol-avatar">{asset.symbol.slice(0, 1)}</span><span><strong>{asset.symbol}</strong><small>{asset.name}</small></span><span className="command-enter">{asset.live ? "LIVE" : asset.coverage_state.replaceAll("_", " ")}</span></button>) : <div className="command-empty">{searching ? "Searching Nasdaq…" : query ? "No Nasdaq listing matches this search." : "The Nasdaq catalogue is unavailable."}</div>}</div></section></div>;
 }
 
 export default function MarketShell({ children }: { children: React.ReactNode }) {

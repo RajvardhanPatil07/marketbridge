@@ -8,12 +8,22 @@ from marketbridge.shadow import (
     LivePipeline,
     NormalizedObservation,
     TRACKED_SYMBOLS,
+    TwelveDataStreamError,
     VENUE_MARK_FRESH_SECONDS,
+    _classify_alpaca_error,
     probe_alpaca_subscription,
 )
 
 
 NOW = datetime(2026, 9, 8, 12, 0, tzinfo=timezone.utc)
+
+
+def test_alpaca_connection_limit_is_retryable():
+    error = _classify_alpaca_error(
+        {"T": "error", "code": 406, "msg": "connection limit exceeded"}, authenticated=False
+    )
+    assert error.status == "RATE_LIMITED"
+    assert error.permanent is False
 
 
 class RecordingSocket:
@@ -87,6 +97,107 @@ def test_live_configuration_accepts_sip_as_multi_venue(monkeypatch, tmp_path):
     assert configuration["warnings"] == []
 
 
+def test_live_configuration_accepts_alpaca_plus_twelve_data(monkeypatch, tmp_path):
+    monkeypatch.setenv("ALPACA_API_KEY", "configured")
+    monkeypatch.setenv("ALPACA_SECRET_KEY", "configured")
+    monkeypatch.setenv("ALPACA_FEED", "iex")
+    monkeypatch.setenv("TWELVE_DATA_API_KEY", "configured")
+
+    configuration = LivePipeline(tmp_path / "audit.jsonl").configuration()
+
+    assert configuration["execution_evidence_configured"] is True
+    assert configuration["twelve_data"] == {
+        "credentials_configured": True,
+        "endpoint": "quotes/price",
+        "tracked_symbols": 8,
+        "qualification_capable": True,
+        "errors": [],
+    }
+
+
+def test_twelve_data_subscription_and_price_form_one_provider_witness(tmp_path):
+    pipeline = LivePipeline(tmp_path / "audit.jsonl")
+    session: dict[str, object] = {"subscribed_symbols": set()}
+    subscription = {
+        "event": "subscribe-status",
+        "status": "ok",
+        "success": [{"symbol": symbol, "exchange": "NASDAQ"} for symbol in TRACKED_SYMBOLS],
+        "fails": [],
+    }
+
+    assert pipeline._handle_twelve_data_event(subscription, session, NOW) == 0
+    provider = next(
+        item for item in pipeline.snapshot(now=NOW)["providers"] if item["id"] == "twelve-data"
+    )
+    assert provider["status"] == "AVAILABLE"
+    assert provider["qualification_capable"] is True
+
+    pipeline.ingest_direct_observation("NVDA", 200.0, NOW, provider="alpaca", venue="IEX")
+    ingested = pipeline._handle_twelve_data_event(
+        {
+            "event": "price",
+            "symbol": "NVDA",
+            "price": 200.02,
+            "timestamp": NOW.timestamp(),
+            "exchange": "NASDAQ",
+        },
+        session,
+        NOW,
+    )
+
+    assert ingested == 1
+    decision = pipeline.oracle.snapshot(now=NOW)["decisions"][0]
+    assert decision["status"] == "QUALIFIED"
+    assert decision["independent_provider_families"] == 2
+    twelve = next(row for row in decision["evidence"] if row["provider_family"] == "twelve-data")
+    assert twelve["venue_family"] == "twelve-data-us-equities"
+
+
+def test_twelve_data_rejects_unsubscribed_stale_and_entitlement_events(tmp_path):
+    pipeline = LivePipeline(tmp_path / "audit.jsonl")
+    session: dict[str, object] = {"subscribed_symbols": {"NVDA"}}
+
+    assert pipeline._handle_twelve_data_event(
+        {"event": "price", "symbol": "TSLA", "price": 200, "timestamp": NOW.timestamp()},
+        session,
+        NOW,
+    ) == 0
+    assert pipeline._handle_twelve_data_event(
+        {
+            "event": "price",
+            "symbol": "NVDA",
+            "price": 200,
+            "timestamp": (NOW - timedelta(seconds=31)).timestamp(),
+        },
+        session,
+        NOW,
+    ) == 0
+    with pytest.raises(TwelveDataStreamError, match="did not authorize"):
+        pipeline._handle_twelve_data_event(
+            {
+                "event": "subscribe-status",
+                "status": "error",
+                "success": [],
+                "fails": [{"symbol": "NVDA", "message": "not available on your plan"}],
+            },
+            {"subscribed_symbols": set()},
+            NOW,
+        )
+    with pytest.raises(TwelveDataStreamError) as auth_error:
+        pipeline._handle_twelve_data_event(
+            {
+                "event": "error",
+                "status": "error",
+                "code": 401,
+                "message": "invalid API key db-secret-value",
+            },
+            session,
+            NOW,
+        )
+    assert auth_error.value.status == "AUTH_ERROR"
+    assert "db-secret-value" not in str(auth_error.value)
+
+
 def test_runtime_probe_reports_entitlement_failure_without_exposing_credentials(monkeypatch):
     monkeypatch.setenv("ALPACA_API_KEY", "private-key")
     monkeypatch.setenv("ALPACA_SECRET_KEY", "private-secret")
@@ -152,7 +263,11 @@ def test_alpaca_only_becomes_available_after_auth_and_subscription(monkeypatch, 
         [{"T": "success", "msg": "authenticated"}], socket, "sip", session, NOW
     )
     assert pipeline.snapshot(now=NOW)["providers"][1]["status"] == "AUTHENTICATED"
-    assert socket.sent == [{"action": "subscribe", "trades": list(pipeline.tracked_symbols), "quotes": list(pipeline.tracked_symbols)}]
+    assert socket.sent == [{
+        "action": "subscribe", "trades": list(pipeline.tracked_symbols),
+        "quotes": list(pipeline.tracked_symbols), "bars": list(pipeline.tracked_symbols),
+        "updatedBars": list(pipeline.tracked_symbols), "dailyBars": list(pipeline.tracked_symbols),
+    }]
 
     pipeline._handle_alpaca_events(
         [{"T": "subscription", "trades": list(pipeline.tracked_symbols), "quotes": list(pipeline.tracked_symbols)}],
@@ -253,6 +368,25 @@ def test_alpaca_trade_filter_rejects_odd_lot_duplicate_out_of_order_and_nbbo_out
     assert provider["last_trade_time"] == (NOW + timedelta(milliseconds=1)).isoformat().replace("+00:00", "Z")
     assert provider["last_qualified_evidence_time"] == (NOW + timedelta(milliseconds=1)).isoformat().replace("+00:00", "Z")
     assert provider["retry_count"] == 0
+
+
+def test_alpaca_corrected_bar_replaces_prior_live_candle(tmp_path):
+    pipeline = LivePipeline(tmp_path / "audit.jsonl")
+    session = {"authenticated": True, "subscription_sent": True, "subscribed": True}
+    original = {
+        "T": "b", "S": "NVDA", "t": NOW.isoformat(), "o": 200.0,
+        "h": 201.0, "l": 199.0, "c": 200.5, "v": 1000, "vw": 200.2, "n": 20,
+    }
+    corrected = {**original, "T": "u", "h": 202.0, "c": 201.5, "v": 1200}
+
+    pipeline._handle_alpaca_events([original], RecordingSocket(), "sip", session, NOW)
+    pipeline._handle_alpaca_events([corrected], RecordingSocket(), "sip", session, NOW)
+
+    live_bars = pipeline.snapshot(now=NOW)["live_bars"]["NVDA"]
+    assert len(live_bars) == 1
+    assert live_bars[0]["close"] == 201.5
+    assert live_bars[0]["kind"] == "CORRECTED_BAR"
+    assert live_bars[0]["data_role"] == "DISPLAY_ONLY_NOT_ORACLE_EVIDENCE"
 
 
 def test_market_health_requires_a_qualified_reference_and_fresh_mark(tmp_path):

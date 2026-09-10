@@ -3,10 +3,35 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
+from marketbridge import api
 from marketbridge.api import app
 from marketbridge import live
 
 client = TestClient(app)
+
+
+def test_curated_display_snapshots_expose_quotes_without_oracle_claims(monkeypatch):
+    async def fake_snapshots(symbols, *, feed):
+        return {
+            symbol: {
+                "status": "AVAILABLE", "price": 252.84, "previous_close": 250.0,
+                "change_pct": 1.136, "event_time": "2026-09-10T15:00:00Z",
+                "bid": 252.8, "ask": 252.86, "day_volume": 1_250_000.0,
+                "feed": feed, "is_delayed": True,
+            }
+            for symbol in symbols
+        }
+
+    monkeypatch.setattr(api.historical_market_data, "snapshots", fake_snapshots)
+    response = client.get("/v1/market/snapshots?symbols=AMZN,AAPL")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_role"] == "DISPLAY_ONLY_NOT_ORACLE_EVIDENCE"
+    assert [item["symbol"] for item in payload["items"]] == ["AMZN", "AAPL"]
+    assert payload["items"][0]["price"] == 252.84
+    assert payload["items"][0]["bid"] == 252.8
+    assert client.get("/v1/market/snapshots?symbols=IBM").status_code == 422
 
 
 def test_catalog_and_all_traces_are_finite_and_deterministic():

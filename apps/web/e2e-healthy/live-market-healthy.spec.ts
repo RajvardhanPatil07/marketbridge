@@ -11,7 +11,7 @@ test("qualified direct evidence and a venue mark are healthy through the browser
     return (await response.json()).market_health.execution_ready;
   }).toBe(true);
 
-  await page.goto("/");
+  await page.goto("/lab/");
   await page.getByRole("button", { name: "Live research" }).click();
   await expect(page.getByText("WS connected", { exact: true })).toBeVisible();
   const marketHealth = page.locator(".market-kpis .kpi").filter({ hasText: "Market health" });

@@ -8,7 +8,7 @@ build:
 	npm --prefix apps/web run build
 
 serve:
-	uv run uvicorn marketbridge.api:app --app-dir backend --host 0.0.0.0 --port $${PORT:-8000}
+	uv run --env-file .env uvicorn marketbridge.api:app --app-dir backend --host 0.0.0.0 --port $${PORT:-8000}
 
 demo: build serve
 
@@ -22,6 +22,7 @@ verify:
 	uv run ruff check backend tests scripts
 	uv run pytest -q
 	npm --prefix apps/web run typecheck
+	npm --prefix apps/web run test:unit
 	npm --prefix apps/web run build
 
 evaluate:
@@ -34,7 +35,7 @@ benchmark-shadow:
 	uv run python scripts/benchmark_shadow.py
 
 live-check:
-	uv run python scripts/check_live_config.py
+	uv run --env-file .env python scripts/check_live_config.py
 
 e2e:
 	npm --prefix apps/web run build

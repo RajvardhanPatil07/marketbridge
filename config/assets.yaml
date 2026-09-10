@@ -1,0 +1,11 @@
+{
+  "version": "asset-policy-v1.0.0",
+  "default_nasdaq_policy": {"underlying_type": "PUBLIC_EQUITY", "reference_semantics": "TRADEABLE_MARK", "max_leverage": {"REGULAR": 1, "PRE": 1, "POST": 1, "OVERNIGHT": 1, "CLOSED": 0, "EXCHANGE_HALT": 0, "CORPORATE_ACTION": 0}, "min_independent_providers": 2, "corporate_action_state": "CLEAR", "manual_review_required": true, "data_policy": "us_equity_nasdaq_default_v1"},
+  "symbols": {
+    "NVDA": {"underlying_type": "PUBLIC_EQUITY", "reference_semantics": "TRADEABLE_MARK", "max_leverage": {"REGULAR": 10, "PRE": 5, "POST": 5, "OVERNIGHT": 3, "CLOSED": 1, "EXCHANGE_HALT": 0, "CORPORATE_ACTION": 0}, "min_independent_providers": 2, "corporate_action_state": "CLEAR", "data_policy": "us_equity_v1"},
+    "TSLA": {"underlying_type": "PUBLIC_EQUITY", "reference_semantics": "TRADEABLE_MARK", "max_leverage": {"REGULAR": 10, "PRE": 5, "POST": 5, "OVERNIGHT": 3, "CLOSED": 1, "EXCHANGE_HALT": 0, "CORPORATE_ACTION": 0}, "min_independent_providers": 2, "corporate_action_state": "CLEAR", "data_policy": "us_equity_v1"},
+    "AAPL": {"underlying_type": "PUBLIC_EQUITY", "reference_semantics": "TRADEABLE_MARK", "max_leverage": {"REGULAR": 10, "PRE": 5, "POST": 5, "OVERNIGHT": 3, "CLOSED": 1, "EXCHANGE_HALT": 0, "CORPORATE_ACTION": 0}, "min_independent_providers": 2, "corporate_action_state": "CLEAR", "data_policy": "us_equity_v1"},
+    "AMD": {"underlying_type": "PUBLIC_EQUITY", "reference_semantics": "TRADEABLE_MARK", "max_leverage": {"REGULAR": 10, "PRE": 5, "POST": 5, "OVERNIGHT": 3, "CLOSED": 1, "EXCHANGE_HALT": 0, "CORPORATE_ACTION": 0}, "min_independent_providers": 2, "corporate_action_state": "CLEAR", "data_policy": "us_equity_v1"},
+    "MSFT": {"underlying_type": "PUBLIC_EQUITY", "reference_semantics": "TRADEABLE_MARK", "max_leverage": {"REGULAR": 10, "PRE": 5, "POST": 5, "OVERNIGHT": 3, "CLOSED": 1, "EXCHANGE_HALT": 0, "CORPORATE_ACTION": 0}, "min_independent_providers": 2, "corporate_action_state": "CLEAR", "data_policy": "us_equity_v1"}
+  }
+}
