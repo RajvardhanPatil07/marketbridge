@@ -27,34 +27,46 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [displaySnapshots, setDisplaySnapshots] = useState<DisplaySnapshot[]>([]);
   const fallbackStarted = useRef(false);
+  const alpacaConfigured = snapshot?.configuration.alpaca.credentials_configured ?? false;
+
   const accept = useCallback((incoming: ShadowSnapshot) => {
     const next = sanitizeSnapshot(incoming);
     setSnapshot(next); setError(null); setLoading(false); setConnection(providerConnection(next));
   }, []);
+
   const loadSnapshot = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/v1/shadow/snapshot`, { headers: { Accept: "application/json" }, cache: "no-store" });
       if (!response.ok) throw Object.assign(new Error(), { status: response.status });
-      accept(await response.json() as ShadowSnapshot);
+      const next = await response.json() as ShadowSnapshot;
+      accept(next);
+      return next;
     } catch (cause) {
       const status = typeof cause === "object" && cause && "status" in cause ? Number(cause.status) : undefined;
       setError(friendlyError(status)); setConnection("offline"); setLoading(false);
+      return null;
     }
   }, [accept]);
+
   const loadDisplaySnapshots = useCallback(async () => {
+    if (!alpacaConfigured) {
+      setDisplaySnapshots([]);
+      return;
+    }
     try {
       const response = await fetch(`${API_BASE}/v1/market/snapshots`, { headers: { Accept: "application/json" }, cache: "no-store" });
       if (!response.ok) return;
       setDisplaySnapshots(((await response.json()) as DisplaySnapshotsResponse).items);
     } catch { /* preserve the last verified display snapshot */ }
-  }, []);
+  }, [alpacaConfigured]);
+
   const refresh = useCallback(async () => {
-    await Promise.all([loadSnapshot(), loadDisplaySnapshots()]);
+    await loadSnapshot();
+    await loadDisplaySnapshots();
   }, [loadDisplaySnapshots, loadSnapshot]);
 
   useEffect(() => {
-    void Promise.all([loadSnapshot(), loadDisplaySnapshots()]);
-    const displayTimer = window.setInterval(() => void loadDisplaySnapshots(), 30_000);
+    void loadSnapshot();
     const wsOrigin = API_BASE ? API_BASE.replace(/^http/, "ws") : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
     let source: EventSource | null = null; let socket: WebSocket | null = null; let closed = false;
     const startFallback = () => {
@@ -68,8 +80,18 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
       socket.onmessage = (event) => { const message = JSON.parse(event.data) as { type: string; data?: ShadowSnapshot }; if (message.type === "shadow_snapshot" && message.data) accept(message.data); };
       socket.onerror = startFallback; socket.onclose = startFallback;
     } catch { startFallback(); }
-    return () => { closed = true; window.clearInterval(displayTimer); socket?.close(); source?.close(); fallbackStarted.current = false; };
-  }, [accept, loadDisplaySnapshots, loadSnapshot]);
+    return () => { closed = true; socket?.close(); source?.close(); fallbackStarted.current = false; };
+  }, [accept, loadSnapshot]);
+
+  useEffect(() => {
+    if (!alpacaConfigured) {
+      setDisplaySnapshots([]);
+      return;
+    }
+    void loadDisplaySnapshots();
+    const timer = window.setInterval(() => void loadDisplaySnapshots(), 30_000);
+    return () => window.clearInterval(timer);
+  }, [alpacaConfigured, loadDisplaySnapshots]);
 
   const value = useMemo<MarketDataContextValue>(() => ({ assets: mergeDisplaySnapshots(assetsFromSnapshot(snapshot), displaySnapshots), snapshot, connection, error, loading, lastUpdated: snapshot?.decisions[0]?.timestamp ?? snapshot?.yahoo?.fetched_at ?? null, refresh }), [snapshot, displaySnapshots, connection, error, loading, refresh]);
   return <MarketDataContext.Provider value={value}>{children}</MarketDataContext.Provider>;
