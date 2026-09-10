@@ -1,4 +1,4 @@
-.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
+.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow benchmark-risk live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
 
 setup:
 	uv sync
@@ -33,6 +33,9 @@ replay:
 
 benchmark-shadow:
 	uv run python scripts/benchmark_shadow.py
+
+benchmark-risk:
+	uv run python scripts/benchmark_risk_gate.py
 
 live-check:
 	uv run --env-file .env python scripts/check_live_config.py
