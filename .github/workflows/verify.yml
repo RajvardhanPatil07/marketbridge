@@ -57,6 +57,9 @@ jobs:
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
+      - name: Prepare retained evidence directories
+        run: mkdir -p artifacts/ui-qa
+
       - name: Verify market-data and synthetic demo flow end to end
         run: make e2e
 
@@ -66,10 +69,15 @@ jobs:
       - name: Export synthetic replay
         run: make replay
 
+      - name: Measure risk-gate operating characteristics
+        run: make benchmark-risk > artifacts/risk-benchmark.json
+
       - name: Retain synthetic evaluation artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: synthetic-demo-evidence
-          path: artifacts/*.json
+          name: judge-evidence
+          path: |
+            artifacts/*.json
+            artifacts/ui-qa/*.png
           if-no-files-found: error
           retention-days: 7
