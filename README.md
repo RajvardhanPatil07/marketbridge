@@ -8,7 +8,7 @@
 
 **Verify the market before leverage acts on it.**
 
-[Proof + War Room](./docs/DEMO.md) · [Historical proof](./docs/PROOF.md) · [Architecture](./docs/ARCHITECTURE.md) · [Threat model](./docs/THREAT_MODEL.md) · [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md)
+[Live Demo](https://marketbridge-production-d284.up.railway.app/) · [Health](https://marketbridge-production-d284.up.railway.app/health) · [Proof + War Room](https://marketbridge-production-d284.up.railway.app/demo/) · [Historical proof](./docs/PROOF.md) · [Architecture](./docs/ARCHITECTURE.md) · [Threat model](./docs/THREAT_MODEL.md) · [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md)
 
 </div>
 
@@ -64,7 +64,7 @@ GET /v1/proof/portfolio
 
 The historical view is `HISTORICAL_RECONSTRUCTION`, not a licensed consolidated feed. The operating suite is `SYNTHETIC_LABELED_BENCHMARK`, not a historical-market backtest. Latency values are measured when the endpoint runs rather than hard-coded into this README.
 
-See [proof methodology](./docs/PROOF.md), [threat model](./docs/THREAT_MODEL.md), and [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md).
+See [proof methodology](./docs/PROOF.md), [threat model](./docs/THREAT_MODEL.md), [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md), and the [90-second demo recording script](./docs/DEMO_VIDEO_SCRIPT.md).
 
 ---
 ## The hackathon demo
