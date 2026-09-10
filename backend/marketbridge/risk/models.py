@@ -42,6 +42,19 @@ class OrderIntent(StrictModel):
     requested_leverage: Decimal = Field(gt=0, le=Decimal("100"), max_digits=6, decimal_places=2)
 
 
+class PortfolioPosition(StrictModel):
+    symbol: str = Field(min_length=1, max_length=12, pattern=r"^[A-Za-z][A-Za-z0-9.\-]*$")
+    notional_usd: Decimal = Field(gt=0, le=Decimal("1000000000"), max_digits=18, decimal_places=2)
+    side: Side = Side.BUY
+    sector: str | None = Field(default=None, max_length=48)
+    correlation_group: str | None = Field(default=None, max_length=48)
+
+    @field_validator("symbol")
+    @classmethod
+    def normalize_symbol(cls, value: str) -> str:
+        return value.upper()
+
+
 class AccountExposure(StrictModel):
     equity_usd: Decimal = Field(gt=0, le=Decimal("1000000000"), max_digits=18, decimal_places=2)
     margin_available_usd: Decimal = Field(ge=0, le=Decimal("1000000000"), max_digits=18, decimal_places=2)
@@ -49,6 +62,7 @@ class AccountExposure(StrictModel):
     liquidation_price: Decimal | None = Field(default=None, gt=0, le=Decimal("10000000"), max_digits=16, decimal_places=6)
     current_leverage: Decimal | None = Field(default=None, ge=0, le=Decimal("100"), max_digits=6, decimal_places=2)
     position_side: Side | None = None
+    portfolio_positions: list[PortfolioPosition] = Field(default_factory=list, max_length=100)
 
 
 class VenueMarketContext(StrictModel):
@@ -99,7 +113,10 @@ class RiskCheckRequest(StrictModel):
 
 class ReplayRequest(StrictModel):
     passport_id: str = Field(pattern=r"^mbp_[0-9a-f]{24}$")
-    policy_version: str = Field(default="CURRENT", pattern=r"^(ORIGINAL|CURRENT|WITHOUT_SAFETY_GATE|mocha-risk-v1\.0\.0)$")
+    policy_version: str = Field(
+        default="CURRENT",
+        pattern=r"^(ORIGINAL|CURRENT|WITHOUT_SAFETY_GATE|mocha-risk-v1\.(?:0\.0|1\.0))$",
+    )
 
 
 class OutcomeRequest(StrictModel):
