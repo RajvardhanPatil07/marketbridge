@@ -40,14 +40,20 @@ type HistoricalPayload = {
 
 type BenchmarkPayload = {
   data_mode: string;
+  seed: number;
   cases: number;
-  classification: {
-    confusion_matrix: { tp: number; tn: number; fp: number; fn: number };
-    false_positive_rate: number;
-    false_negative_rate: number;
-    precision: number;
-    recall: number;
-    accuracy: number;
+  generator: { version: string; claim: string };
+  actions: Record<string, number>;
+  coverage: Record<string, number>;
+  invariants: {
+    total_violations: number;
+    violations: {
+      stale_evidence_accepted: number;
+      insufficient_independence_accepted: number;
+      halted_market_accepted: number;
+      correlated_sources_counted_as_independent: number;
+      exit_path_violations: number;
+    };
   };
   latency: {
     core_policy_ms: { p50: number; p95: number; p99: number; mean: number };
@@ -64,11 +70,17 @@ type BenchmarkPayload = {
 
 type PortfolioPayload = {
   data_mode: string;
+  inputs_are_editable?: boolean;
   order: {
     symbol: string;
     requested_notional_usd: number;
     requested_leverage: number;
     session: string;
+  };
+  account?: {
+    equity_usd: number;
+    existing_position_usd: number;
+    portfolio_positions: Array<{ symbol: string; notional_usd: number; sector?: string; correlation_group?: string }>;
   };
   result: {
     action: string;
@@ -130,6 +142,12 @@ export function ProofLab() {
   const [benchmark, setBenchmark] = useState<BenchmarkPayload | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [portfolioSymbol, setPortfolioSymbol] = useState("NVDA");
+  const [portfolioNotional, setPortfolioNotional] = useState(10000);
+  const [portfolioLeverage, setPortfolioLeverage] = useState(10);
+  const [portfolioEquity, setPortfolioEquity] = useState(10000);
+  const [portfolioExisting, setPortfolioExisting] = useState(22000);
+  const [portfolioBusy, setPortfolioBusy] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -159,6 +177,30 @@ export function ProofLab() {
     return () => controller.abort();
   }, []);
 
+  const runPortfolio = async () => {
+    setPortfolioBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(API_BASE + "/v1/proof/portfolio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: portfolioSymbol,
+          requested_notional_usd: portfolioNotional,
+          requested_leverage: portfolioLeverage,
+          account_equity_usd: portfolioEquity,
+          existing_position_usd: portfolioExisting,
+        }),
+      });
+      if (!response.ok) throw new Error(`Portfolio demo failed (${response.status})`);
+      setPortfolio(await response.json() as PortfolioPayload);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Portfolio demo failed.");
+    } finally {
+      setPortfolioBusy(false);
+    }
+  };
+
   const incidentSamples = useMemo(() => {
     if (!historical?.timeline.length) return [];
     const points = historical.timeline;
@@ -176,8 +218,8 @@ export function ProofLab() {
           <h1>Evidence, operating characteristics, and safe alternatives.</h1>
           <p>
             The War Room remains synthetic and clearly labeled. This layer adds a published historical
-            reconstruction, measured policy/gateway latency, a labeled false-positive/false-negative suite,
-            and a portfolio-aware pre-trade cap.
+            reconstruction, measured policy/gateway latency, a seeded multi-dimensional policy-regression
+            suite, and an editable portfolio-aware pre-trade cap.
           </p>
         </div>
         <div className="proof-badges">
@@ -230,24 +272,24 @@ export function ProofLab() {
 
         <article className="proof-card">
           <div className="v1-card-title">
-            <span>OPERATING CHARACTERISTICS</span>
-            <b>{benchmark ? benchmark.cases + " CASES" : "MEASURING"}</b>
+            <span>SEEDED POLICY REGRESSION</span>
+            <b>{benchmark ? benchmark.cases + " VARIED CASES" : "MEASURING"}</b>
           </div>
-          <h2>Does the gate cry wolf?</h2>
+          <h2>Does the safety policy hold across a changing state space?</h2>
           {benchmark ? (
             <>
               <div className="metric-grid">
-                <div><span>False positive</span><strong>{percent(benchmark.classification.false_positive_rate)}</strong></div>
-                <div><span>False negative</span><strong>{percent(benchmark.classification.false_negative_rate)}</strong></div>
-                <div><span>Precision</span><strong>{percent(benchmark.classification.precision)}</strong></div>
-                <div><span>Recall</span><strong>{percent(benchmark.classification.recall)}</strong></div>
+                <div><span>Invariant violations</span><strong>{benchmark.invariants.total_violations}</strong></div>
+                <div><span>Stale accepted</span><strong>{benchmark.invariants.violations.stale_evidence_accepted}</strong></div>
+                <div><span>Bad independence accepted</span><strong>{benchmark.invariants.violations.insufficient_independence_accepted}</strong></div>
+                <div><span>Exit-path violations</span><strong>{benchmark.invariants.violations.exit_path_violations}</strong></div>
               </div>
               <div className="confusion">
-                <div className="confusion-head">CONFUSION MATRIX · RESTRICT = POSITIVE</div>
-                <div><span>TP</span><strong>{benchmark.classification.confusion_matrix.tp}</strong></div>
-                <div><span>FP</span><strong>{benchmark.classification.confusion_matrix.fp}</strong></div>
-                <div><span>FN</span><strong>{benchmark.classification.confusion_matrix.fn}</strong></div>
-                <div><span>TN</span><strong>{benchmark.classification.confusion_matrix.tn}</strong></div>
+                <div className="confusion-head">ACTION DISTRIBUTION · SEED {benchmark.seed}</div>
+                <div><span>ALLOW</span><strong>{benchmark.actions.ALLOW ?? 0}</strong></div>
+                <div><span>CAP</span><strong>{benchmark.actions.CAP_LEVERAGE ?? 0}</strong></div>
+                <div><span>REVIEW</span><strong>{benchmark.actions.REVIEW ?? 0}</strong></div>
+                <div><span>BLOCK</span><strong>{benchmark.actions.BLOCK_NEW_RISK ?? 0}</strong></div>
               </div>
               <div className="latency-row">
                 <div><span>Core p50</span><strong>{ms(benchmark.latency.core_policy_ms.p50)}</strong></div>
@@ -256,12 +298,14 @@ export function ProofLab() {
                 <div><span>Gateway p95</span><strong>{ms(benchmark.latency.in_process_gateway_ms.p95)}</strong></div>
               </div>
               <p className="proof-boundary">
-                {benchmark.data_mode}. {benchmark.latency.boundary} These are measured at request time,
-                not hard-coded README numbers.
+                {benchmark.data_mode}. {benchmark.generator.claim} {benchmark.latency.boundary}
+              </p>
+              <p className="proof-boundary">
+                Coverage: {benchmark.coverage.stale ?? 0} stale · {benchmark.coverage.single_or_zero_source ?? 0} insufficient-source · {benchmark.coverage.large_divergence ?? 0} large-divergence · {benchmark.coverage.portfolio_cases ?? 0} portfolio states.
               </p>
             </>
           ) : (
-            <p>Running the labeled benchmark in this process…</p>
+            <p>Generating reproducible varied policy states and measuring the same decision function…</p>
           )}
         </article>
 
@@ -275,6 +319,14 @@ export function ProofLab() {
             Even when the price is accepted, the account may already carry too much correlated or
             single-name exposure.
           </p>
+          <div className="proof-inputs">
+            <label><span>Symbol</span><select value={portfolioSymbol} onChange={(event) => setPortfolioSymbol(event.target.value)}>{["NVDA","TSLA","AAPL","MSFT","AMD"].map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span>New notional</span><input type="number" min="1" step="500" value={portfolioNotional} onChange={(event) => setPortfolioNotional(Number(event.target.value))}/></label>
+            <label><span>Leverage</span><input type="number" min="1" max="100" value={portfolioLeverage} onChange={(event) => setPortfolioLeverage(Number(event.target.value))}/></label>
+            <label><span>Equity</span><input type="number" min="1" step="1000" value={portfolioEquity} onChange={(event) => setPortfolioEquity(Number(event.target.value))}/></label>
+            <label><span>Existing exposure</span><input type="number" min="0" step="1000" value={portfolioExisting} onChange={(event) => setPortfolioExisting(Number(event.target.value))}/></label>
+            <button onClick={runPortfolio} disabled={portfolioBusy}>{portfolioBusy ? "Recomputing…" : "Recompute risk"}</button>
+          </div>
           {portfolio && (
             <>
               <div className="order-compare">
@@ -325,7 +377,7 @@ export function ProofLab() {
           </div>
           <h2>One pre-trade call, one short-lived passport.</h2>
           <div className="host-flow">
-            <div><span>MOCHATRADE ORDER</span><strong>NVDA LONG · 10×</strong></div>
+            <div><span>MOCHATRADE ORDER</span><strong>{portfolio?.order.symbol ?? "SYMBOL"} · {portfolio?.order.requested_leverage ?? "—"}×</strong></div>
             <i>→</i>
             <div><span>POST /risk-check</span><strong>MarketBridge</strong></div>
             <i>→</i>
