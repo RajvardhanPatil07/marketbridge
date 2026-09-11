@@ -62,9 +62,11 @@ Keep only as an optional/internal cross-check. A free key or trial WebSocket doe
 
 ```env
 TWELVE_DATA_API_KEY=...
+# Enable only after verifying your account's non-display/risk-computation rights:
+# TWELVE_DATA_RISK_ELIGIBLE=1
 ```
 
-MarketBridge v1 does not require it to run the flagship demo.
+Without the explicit eligibility opt-in, Twelve Data remains a context/internal cross-check and cannot qualify Market Truth. MarketBridge v1 does not require it to run the flagship demo.
 
 ### FRED
 
