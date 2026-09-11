@@ -217,7 +217,7 @@ export function ProofLab() {
           <span className="v1-eyebrow">STEP 0 · PROVE IT BEFORE THE SYNTHETIC ATTACK</span>
           <h1>Evidence, operating characteristics, and safe alternatives.</h1>
           <p>
-            The War Room remains synthetic and clearly labeled. This layer adds a published historical
+            The War Room clearly labels live-derived versus synthetic evidence. This layer adds a published historical
             reconstruction, measured policy/gateway latency, a seeded multi-dimensional policy-regression
             suite, and an editable portfolio-aware pre-trade cap.
           </p>
@@ -303,6 +303,7 @@ export function ProofLab() {
               <p className="proof-boundary">
                 Coverage: {benchmark.coverage.stale ?? 0} stale · {benchmark.coverage.single_or_zero_source ?? 0} insufficient-source · {benchmark.coverage.large_divergence ?? 0} large-divergence · {benchmark.coverage.portfolio_cases ?? 0} portfolio states.
               </p>
+              <a className="proof-json-link" href={API_BASE + "/v1/proof/benchmark?cases=2000&seed=" + benchmark.seed} target="_blank" rel="noreferrer">Open benchmark JSON ↗</a>
             </>
           ) : (
             <p>Generating reproducible varied policy states and measuring the same decision function…</p>
