@@ -26,7 +26,7 @@ function MarketStrip() {
   const { assets, connection } = useMarketData();
   const tracked = useMemo(() => TRACKED_SYMBOLS.map((symbol) => assets.find((asset) => asset.symbol === symbol)).filter(Boolean), [assets]);
   return <div className="ticker-strip" aria-label="Tracked market strip"><div className="ticker-track">
-    {tracked.length ? tracked.map((asset) => asset && <Link key={asset.symbol} href={`/asset/${asset.symbol.toLowerCase()}/`} className="ticker-item"><strong>{asset.symbol}</strong><span>{money(asset.price, asset.currency)}</span><b className={asset.changePct != null && asset.changePct < 0 ? "down" : "up"}>{percent(asset.changePct)}</b></Link>) : <><span className="ticker-item"><strong>NVDA</strong><span>Awaiting free feed</span></span><span className="ticker-item"><strong>TSLA</strong><span>Awaiting free feed</span></span></>}
+    {tracked.length ? tracked.map((asset) => asset && <Link key={asset.symbol} href={`/asset/explore/?symbol=${encodeURIComponent(asset.symbol)}`} className="ticker-item"><strong>{asset.symbol}</strong><span>{money(asset.price, asset.currency)}</span><b className={asset.changePct != null && asset.changePct < 0 ? "down" : "up"}>{percent(asset.changePct)}</b></Link>) : <><span className="ticker-item"><strong>NVDA</strong><span>Awaiting free feed</span></span><span className="ticker-item"><strong>TSLA</strong><span>Awaiting free feed</span></span></>}
     <span className={`ticker-state ${connection}`}><i/>{connection === "live" ? "Live" : connection === "delayed" ? "Delayed" : connection === "connecting" ? "Connecting" : "Offline"}</span>
   </div></div>;
 }
