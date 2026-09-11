@@ -155,7 +155,7 @@ def _war_room_risk_request(
             margin_available_usd=margin_available,
             position_notional_usd=existing_position,
             current_leverage=(
-                existing_position / payload.account_equity_usd
+                (existing_position / payload.account_equity_usd).quantize(Decimal("0.01"))
                 if existing_position
                 else Decimal("0")
             ),
