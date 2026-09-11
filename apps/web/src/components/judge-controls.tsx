@@ -5,6 +5,7 @@ import { useMarketData } from "@/components/market-data-provider";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
 const LIVE_ATTACK_BPS = 350;
+const roundPrice = (value: number) => Math.round(value * 1_000_000) / 1_000_000;
 
 type LiveResult = {
   available: boolean;
@@ -90,7 +91,7 @@ function safeOrderPayload(baseline: number) {
 
 export function JudgeControls() {
   const { assets } = useMarketData();
-  const safeBaseline = assets.find((asset) => asset.symbol === "NVDA")?.price ?? 200;
+  const safeBaseline = roundPrice(assets.find((asset) => asset.symbol === "NVDA")?.price ?? 200);
   const [live, setLive] = useState<LiveResult | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
   const [safe, setSafe] = useState<SafeOrderResult | null>(null);
