@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
+import random
 import statistics
 import time
 import uuid
@@ -153,280 +154,237 @@ def historical_incident_policy_replay() -> dict:
     }
 
 
-def _benchmark_request(
-    index: int,
-    session: str = "REGULAR",
-    portfolio: bool = False,
-) -> RiskCheckRequest:
-    account: dict = {
-        "equity_usd": 10000,
-        "margin_available_usd": 10000,
-        "position_notional_usd": 0,
-    }
-    if portfolio:
-        account.update(
+def _random_portfolio(rng: random.Random, symbol: str, gross: Decimal) -> list[dict]:
+    if gross <= 0:
+        return []
+    universe = ["NVDA", "AMD", "MSFT", "AAPL", "TSLA"]
+    if symbol not in universe:
+        universe[0] = symbol
+    weights = [Decimal("0.30"), Decimal("0.22"), Decimal("0.18"), Decimal("0.17"), Decimal("0.13")]
+    rng.shuffle(universe)
+    if symbol in universe:
+        universe.remove(symbol)
+    universe.insert(0, symbol)
+    rows = []
+    remaining = gross
+    for index, (item, weight) in enumerate(zip(universe, weights)):
+        amount = (
+            remaining
+            if index == len(weights) - 1
+            else (gross * weight).quantize(Decimal("0.01"))
+        )
+        remaining -= amount
+        rows.append(
             {
-                "position_notional_usd": 22000,
-                "current_leverage": 2.2,
-                "liquidation_price": 140,
-                "position_side": "BUY",
-                "portfolio_positions": [
-                    {
-                        "symbol": "NVDA",
-                        "notional_usd": 6000,
-                        "sector": "SEMICONDUCTORS",
-                        "correlation_group": "AI_COMPUTE",
-                    },
-                    {
-                        "symbol": "AMD",
-                        "notional_usd": 5000,
-                        "sector": "SEMICONDUCTORS",
-                        "correlation_group": "AI_COMPUTE",
-                    },
-                    {
-                        "symbol": "MSFT",
-                        "notional_usd": 4000,
-                        "sector": "TECHNOLOGY",
-                        "correlation_group": "MEGA_CAP_TECH",
-                    },
-                    {
-                        "symbol": "AAPL",
-                        "notional_usd": 4000,
-                        "sector": "TECHNOLOGY",
-                        "correlation_group": "MEGA_CAP_TECH",
-                    },
-                    {
-                        "symbol": "TSLA",
-                        "notional_usd": 3000,
-                        "sector": "CONSUMER_DISCRETIONARY",
-                        "correlation_group": "HIGH_BETA_GROWTH",
-                    },
-                ],
+                "symbol": item,
+                "notional_usd": max(amount, Decimal("0.01")),
+                "sector": (
+                    "SEMICONDUCTORS"
+                    if item in {"NVDA", "AMD"}
+                    else "TECHNOLOGY"
+                    if item in {"MSFT", "AAPL"}
+                    else "CONSUMER_DISCRETIONARY"
+                ),
+                "correlation_group": (
+                    "AI_COMPUTE"
+                    if item in {"NVDA", "AMD"}
+                    else "MEGA_CAP_TECH"
+                    if item in {"MSFT", "AAPL"}
+                    else "HIGH_BETA_GROWTH"
+                ),
             }
         )
-    return RiskCheckRequest.model_validate(
-        {
-            "request_id": f"bench-{index:05d}",
-            "symbol": "NVDA",
-            "intent": {
-                "kind": "OPEN",
-                "side": "BUY",
-                "notional_usd": 10000,
-                "requested_leverage": 10,
-            },
-            "account": account,
-            "market": {
-                "mark_price": 184.52,
-                "event_time": "2026-09-10T12:00:00Z",
-                "session": session,
-            },
-        }
-    )
-
-
-def _truth(kind: str) -> dict:
-    normal = {
-        "reference_price": D("184.52"),
-        "reference_status": "QUALIFIED",
-        "confidence": D("0.95"),
-        "venue_mark": D("184.52"),
-        "divergence_bps": D("0"),
-        "provider_count": 2,
-        "venue_count": 2,
-        "session": "REGULAR",
-        "asset_state": "NORMAL",
-        "stale": False,
-        "malformed": False,
-        "authenticated": True,
-        "entitled": True,
-        "evidence": [],
-        "data_mode": "SYNTHETIC_BENCHMARK",
-        "model_version": "benchmark-v1",
-    }
-    if kind == "normal":
-        return normal
-    if kind == "confirmed_news_move":
-        return {
-            **normal,
-            "reference_price": D("192.00"),
-            "venue_mark": D("192.04"),
-            "divergence_bps": D("2.08"),
-        }
-    if kind == "overnight":
-        return {**normal, "session": "OVERNIGHT"}
-    if kind == "stale":
-        return {**normal, "stale": True}
-    if kind == "single_source":
-        return {**normal, "provider_count": 1, "venue_count": 1}
-    if kind == "correlated_providers":
-        # Two vendor labels can still map to one upstream family. The policy sees
-        # independent-family count, not raw vendor count.
-        return {**normal, "provider_count": 1, "venue_count": 1}
-    if kind == "poisoned_mark":
-        return {
-            **normal,
-            "venue_mark": D("190.20"),
-            "divergence_bps": D("307.82"),
-            "asset_state": "HALTED",
-        }
-    if kind == "recovery_pending":
-        return {**normal, "asset_state": "RECOVERY_PENDING"}
-    if kind == "portfolio_concentration":
-        return normal
-    raise KeyError(kind)
+    return rows
 
 
 @lru_cache(maxsize=8)
-def risk_gate_benchmark(root: Path, cases_per_class: int = 50) -> dict:
-    categories = [
-        ("normal", False, "REGULAR", False),
-        ("confirmed_news_move", False, "REGULAR", False),
-        ("overnight", True, "OVERNIGHT", False),
-        ("stale", True, "REGULAR", False),
-        ("single_source", True, "REGULAR", False),
-        ("correlated_providers", True, "REGULAR", False),
-        ("poisoned_mark", True, "REGULAR", False),
-        ("recovery_pending", True, "REGULAR", False),
-        ("portfolio_concentration", True, "REGULAR", True),
-    ]
-    asset_policy = RiskGateway(root).assets["NVDA"]
-    tp = tn = fp = fn = 0
-    latencies_ms: list[float] = []
-    category_results: list[dict] = []
-    index = 0
+def risk_gate_benchmark(root: Path, cases: int = 2000, seed: int = 20260911) -> dict:
+    """Exercise a reproducible, varied state space instead of replaying copies.
 
-    for kind, expected_restrict, session, portfolio in categories:
-        local_counts = {"tp": 0, "tn": 0, "fp": 0, "fn": 0}
-        actions: dict[str, int] = {}
-        for _ in range(cases_per_class):
-            request = _benchmark_request(
-                index,
-                session=session,
-                portfolio=portfolio,
-            )
-            truth = _truth(kind)
-            started = time.perf_counter_ns()
-            result = decide(request, truth, asset_policy)
-            latencies_ms.append(
-                (time.perf_counter_ns() - started) / 1_000_000
-            )
-            predicted_restrict = result["action"] != "ALLOW"
-            actions[result["action"]] = actions.get(result["action"], 0) + 1
-            if expected_restrict and predicted_restrict:
-                tp += 1
-                local_counts["tp"] += 1
-            elif not expected_restrict and not predicted_restrict:
-                tn += 1
-                local_counts["tn"] += 1
-            elif not expected_restrict and predicted_restrict:
-                fp += 1
-                local_counts["fp"] += 1
-            else:
-                fn += 1
-                local_counts["fn"] += 1
-            index += 1
-        category_results.append(
-            {
-                "category": kind,
-                "expected": (
-                    "RESTRICT"
-                    if expected_restrict
-                    else "ALLOW"
-                ),
-                "cases": cases_per_class,
-                "actions": actions,
-                **local_counts,
-            }
+    This is a deterministic policy-regression benchmark, not a classifier
+    accuracy claim. The independent assertions are safety invariants.
+    """
+    rng = random.Random(seed)
+    gateway = RiskGateway(root)
+    symbols = tuple(gateway.assets.keys())
+    sessions = ("REGULAR", "PRE", "POST", "OVERNIGHT", "CLOSED")
+    actions = {"ALLOW": 0, "CAP_LEVERAGE": 0, "REVIEW": 0, "BLOCK_NEW_RISK": 0}
+    latencies_ms: list[float] = []
+    violations = {
+        "stale_evidence_accepted": 0,
+        "insufficient_independence_accepted": 0,
+        "halted_market_accepted": 0,
+        "correlated_sources_counted_as_independent": 0,
+        "exit_path_violations": 0,
+    }
+    coverage = {
+        "stale": 0,
+        "single_or_zero_source": 0,
+        "correlated_provider_labels": 0,
+        "large_divergence": 0,
+        "portfolio_cases": 0,
+        "overnight_or_closed": 0,
+    }
+
+    for index in range(cases):
+        symbol = rng.choice(symbols)
+        session = rng.choice(sessions)
+        reference = Decimal(str(round(rng.uniform(40, 600), 4)))
+        divergence_bps = Decimal(str(round(rng.uniform(0, 900), 2)))
+        direction = Decimal("1") if rng.random() >= 0.5 else Decimal("-1")
+        mark = (reference * (Decimal("1") + direction * divergence_bps / Decimal("10000"))).quantize(Decimal("0.000001"))
+        stale = rng.random() < 0.12
+        correlated = rng.random() < 0.12
+        raw_provider_labels = 2 if correlated else rng.choice([0, 1, 2, 2, 3])
+        provider_count = 1 if correlated else raw_provider_labels
+        venue_count = provider_count
+        portfolio_case = rng.random() < 0.22
+        existing = Decimal(str(round(rng.uniform(1000, 50000), 2))) if portfolio_case else Decimal("0")
+        equity = Decimal(str(round(rng.uniform(2000, 75000), 2)))
+        notional = Decimal(str(round(rng.uniform(500, 60000), 2)))
+        leverage = Decimal(str(round(rng.uniform(1, 20), 2)))
+        asset_state = (
+            "HALTED"
+            if divergence_bps >= Decimal("250")
+            else "RECOVERY_PENDING"
+            if rng.random() < 0.05
+            else "NORMAL"
         )
 
-    total = tp + tn + fp + fn
-    legitimate = tn + fp
-    unsafe = tp + fn
+        if stale:
+            coverage["stale"] += 1
+        if provider_count < 2:
+            coverage["single_or_zero_source"] += 1
+        if correlated:
+            coverage["correlated_provider_labels"] += 1
+        if divergence_bps >= Decimal("250"):
+            coverage["large_divergence"] += 1
+        if portfolio_case:
+            coverage["portfolio_cases"] += 1
+        if session in {"OVERNIGHT", "CLOSED"}:
+            coverage["overnight_or_closed"] += 1
 
-    gateway = RiskGateway(root)
-    gateway_latencies: list[float] = []
-    gateway_samples = min(
-        200,
-        max(50, cases_per_class * 2),
-    )
-    for _ in range(gateway_samples):
         request = RiskCheckRequest.model_validate(
             {
-                "request_id": f"gateway-bench-{uuid.uuid4().hex}",
-                "symbol": "NVDA",
+                "request_id": f"bench-{seed}-{index:06d}",
+                "symbol": symbol,
                 "intent": {
                     "kind": "OPEN",
                     "side": "BUY",
-                    "notional_usd": 10000,
-                    "requested_leverage": 10,
+                    "notional_usd": float(notional),
+                    "requested_leverage": float(leverage),
                 },
                 "account": {
-                    "equity_usd": 10000,
-                    "margin_available_usd": 10000,
+                    "equity_usd": float(equity),
+                    "margin_available_usd": float(equity),
+                    "position_notional_usd": float(existing),
+                    "current_leverage": float(existing / equity) if existing else 0,
+                    "position_side": "BUY" if existing else None,
+                    "liquidation_price": float(reference * Decimal("0.75")) if existing else None,
+                    "portfolio_positions": _random_portfolio(rng, symbol, existing),
+                },
+                "market": {
+                    "mark_price": float(mark),
+                    "event_time": "2026-09-10T12:00:00Z",
+                    "session": session,
+                },
+            }
+        )
+        truth = {
+            "reference_price": reference,
+            "reference_status": "QUALIFIED" if provider_count >= 2 and not stale else "INSUFFICIENT_EVIDENCE",
+            "confidence": Decimal("0.95") if provider_count >= 2 and not stale else Decimal("0.25"),
+            "venue_mark": mark,
+            "divergence_bps": divergence_bps,
+            "provider_count": provider_count,
+            "venue_count": venue_count,
+            "raw_provider_labels": raw_provider_labels,
+            "session": session,
+            "asset_state": asset_state,
+            "stale": stale,
+            "malformed": False,
+            "authenticated": True,
+            "entitled": True,
+            "evidence": [],
+            "data_mode": "SYNTHETIC_POLICY_REGRESSION",
+            "model_version": "benchmark-generator-v2",
+        }
+
+        started = time.perf_counter_ns()
+        result = decide(request, truth, gateway.assets[symbol])
+        latencies_ms.append((time.perf_counter_ns() - started) / 1_000_000)
+        action = result["action"]
+        actions[action] = actions.get(action, 0) + 1
+
+        if stale and action == "ALLOW":
+            violations["stale_evidence_accepted"] += 1
+        if provider_count < 2 and action == "ALLOW":
+            violations["insufficient_independence_accepted"] += 1
+        if asset_state in {"HALTED", "RECOVERY_PENDING"} and action == "ALLOW":
+            violations["halted_market_accepted"] += 1
+        if correlated and provider_count != 1:
+            violations["correlated_sources_counted_as_independent"] += 1
+
+        if index < min(cases, 250) and (stale or provider_count < 2 or asset_state != "NORMAL"):
+            close_request = request.model_copy(
+                update={
+                    "intent": request.intent.model_copy(update={"kind": "CLOSE"}),
+                    "account": request.account.model_copy(
+                        update={
+                            "position_notional_usd": max(existing, notional),
+                            "position_side": "BUY",
+                        }
+                    ),
+                }
+            )
+            close_result = decide(close_request, truth, gateway.assets[symbol])
+            if close_result["action"] != "ALLOW":
+                violations["exit_path_violations"] += 1
+
+    gateway_latencies: list[float] = []
+    for index in range(min(200, max(50, cases // 20))):
+        reference = Decimal(str(round(rng.uniform(60, 450), 4)))
+        request = RiskCheckRequest.model_validate(
+            {
+                "request_id": f"gateway-bench-{seed}-{index}-{uuid.uuid4().hex[:8]}",
+                "symbol": rng.choice(symbols),
+                "intent": {
+                    "kind": "OPEN",
+                    "side": "BUY",
+                    "notional_usd": round(rng.uniform(1000, 25000), 2),
+                    "requested_leverage": round(rng.uniform(1, 10), 2),
+                },
+                "account": {
+                    "equity_usd": 25000,
+                    "margin_available_usd": 25000,
                     "position_notional_usd": 0,
                 },
                 "market": {
-                    "mark_price": 184.51,
-                    "event_time": "2026-09-10T12:00:00Z",
+                    "mark_price": float(reference),
+                    "oracle_price": float(reference),
+                    "event_time": datetime.now(timezone.utc).isoformat(),
                     "session": "REGULAR",
                 },
                 "demo_scenario": "NORMAL",
             }
         )
-        now = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
         started = time.perf_counter_ns()
-        gateway.check(
-            request,
-            {"decisions": []},
-            now=now,
-        )
-        gateway_latencies.append(
-            (time.perf_counter_ns() - started) / 1_000_000
-        )
+        gateway.check(request, {"decisions": []}, now=datetime.now(timezone.utc))
+        gateway_latencies.append((time.perf_counter_ns() - started) / 1_000_000)
 
     return {
-        "data_mode": "SYNTHETIC_LABELED_BENCHMARK",
-        "generated_at": datetime.now(timezone.utc).isoformat().replace(
-            "+00:00",
-            "Z",
-        ),
-        "cases": total,
-        "classification": {
-            "positive_definition": (
-                "order should be restricted (CAP/REVIEW/BLOCK)"
-            ),
-            "confusion_matrix": {
-                "tp": tp,
-                "tn": tn,
-                "fp": fp,
-                "fn": fn,
-            },
-            "false_positive_rate": (
-                fp / legitimate
-                if legitimate
-                else 0.0
-            ),
-            "false_negative_rate": (
-                fn / unsafe
-                if unsafe
-                else 0.0
-            ),
-            "precision": (
-                tp / (tp + fp)
-                if tp + fp
-                else 0.0
-            ),
-            "recall": (
-                tp / unsafe
-                if unsafe
-                else 0.0
-            ),
-            "accuracy": (
-                (tp + tn) / total
-                if total
-                else 0.0
-            ),
-            "categories": category_results,
+        "data_mode": "SYNTHETIC_POLICY_REGRESSION",
+        "seed": seed,
+        "cases": cases,
+        "generator": {
+            "version": "benchmark-generator-v2",
+            "claim": "Varied reproducible policy states; not a classifier accuracy or backtest claim.",
+        },
+        "actions": actions,
+        "coverage": coverage,
+        "invariants": {
+            "violations": violations,
+            "total_violations": sum(violations.values()),
         },
         "latency": {
             "core_policy_ms": {
@@ -436,119 +394,87 @@ def risk_gate_benchmark(root: Path, cases_per_class: int = 50) -> dict:
                 "mean": round(statistics.fmean(latencies_ms), 4),
             },
             "in_process_gateway_ms": {
-                "p50": round(
-                    _percentile(gateway_latencies, 0.50),
-                    4,
-                ),
-                "p95": round(
-                    _percentile(gateway_latencies, 0.95),
-                    4,
-                ),
-                "p99": round(
-                    _percentile(gateway_latencies, 0.99),
-                    4,
-                ),
-                "mean": round(
-                    statistics.fmean(gateway_latencies),
-                    4,
-                ),
+                "p50": round(_percentile(gateway_latencies, 0.50), 4),
+                "p95": round(_percentile(gateway_latencies, 0.95), 4),
+                "p99": round(_percentile(gateway_latencies, 0.99), 4),
+                "mean": round(statistics.fmean(gateway_latencies), 4),
             },
-            "boundary": (
-                "In-process measurements; network, reverse-proxy and provider "
-                "I/O are excluded."
-            ),
+            "boundary": "In-process measurements; network, reverse-proxy and provider I/O are excluded.",
         },
         "economics": {
             "llm_calls_in_risk_critical_path": 0,
             "paid_api_calls_required_by_policy_function": 0,
             "market_data_license_cost_per_million_decisions_usd": None,
-            "note": (
-                "Market-data licensing and hosting are deployment-specific; "
-                "MarketBridge does not invent a dollar cost without a measured "
-                "invoice and entitlement."
-            ),
+            "note": "Market-data licensing and hosting are deployment-specific; MarketBridge does not invent a dollar cost without a measured invoice and entitlement.",
         },
     }
 
 
-def portfolio_demo(root: Path) -> dict:
+def portfolio_demo(
+    root: Path,
+    *,
+    symbol: str = "NVDA",
+    requested_notional_usd: Decimal = Decimal("10000"),
+    requested_leverage: Decimal = Decimal("10"),
+    account_equity_usd: Decimal = Decimal("10000"),
+    existing_position_usd: Decimal = Decimal("22000"),
+) -> dict:
     gateway = RiskGateway(root)
-    now = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
+    if symbol not in gateway.assets:
+        raise KeyError("unsupported symbol")
+    now = datetime.now(timezone.utc)
+    checksum = sum(ord(char) for char in symbol)
+    reference = Decimal(100 + checksum % 120).quantize(Decimal("0.01"))
+    requested_notional_usd = Decimal(str(requested_notional_usd))
+    requested_leverage = Decimal(str(requested_leverage))
+    account_equity_usd = Decimal(str(account_equity_usd))
+    existing_position_usd = Decimal(str(existing_position_usd))
+    rng = random.Random(f"portfolio-{symbol}-{existing_position_usd}")
+    positions = _random_portfolio(rng, symbol, existing_position_usd)
+
     request = RiskCheckRequest.model_validate(
         {
             "request_id": f"portfolio-demo-{uuid.uuid4().hex}",
-            "symbol": "NVDA",
+            "symbol": symbol,
             "intent": {
                 "kind": "OPEN",
                 "side": "BUY",
-                "notional_usd": 10000,
-                "requested_leverage": 10,
+                "notional_usd": float(requested_notional_usd),
+                "requested_leverage": float(requested_leverage),
             },
             "account": {
-                "equity_usd": 10000,
-                "margin_available_usd": 10000,
-                "position_notional_usd": 22000,
-                "current_leverage": 2.2,
-                "liquidation_price": 140,
-                "position_side": "BUY",
-                "portfolio_positions": [
-                    {
-                        "symbol": "NVDA",
-                        "notional_usd": 6000,
-                        "sector": "SEMICONDUCTORS",
-                        "correlation_group": "AI_COMPUTE",
-                    },
-                    {
-                        "symbol": "AMD",
-                        "notional_usd": 5000,
-                        "sector": "SEMICONDUCTORS",
-                        "correlation_group": "AI_COMPUTE",
-                    },
-                    {
-                        "symbol": "MSFT",
-                        "notional_usd": 4000,
-                        "sector": "TECHNOLOGY",
-                        "correlation_group": "MEGA_CAP_TECH",
-                    },
-                    {
-                        "symbol": "AAPL",
-                        "notional_usd": 4000,
-                        "sector": "TECHNOLOGY",
-                        "correlation_group": "MEGA_CAP_TECH",
-                    },
-                    {
-                        "symbol": "TSLA",
-                        "notional_usd": 3000,
-                        "sector": "CONSUMER_DISCRETIONARY",
-                        "correlation_group": "HIGH_BETA_GROWTH",
-                    },
-                ],
+                "equity_usd": float(account_equity_usd),
+                "margin_available_usd": float(account_equity_usd),
+                "position_notional_usd": float(existing_position_usd),
+                "current_leverage": float(existing_position_usd / account_equity_usd) if existing_position_usd else 0,
+                "liquidation_price": float(reference * Decimal("0.75")) if existing_position_usd else None,
+                "position_side": "BUY" if existing_position_usd else None,
+                "portfolio_positions": positions,
             },
             "market": {
-                "mark_price": 184.51,
+                "mark_price": float(reference),
+                "oracle_price": float(reference),
                 "event_time": now.isoformat(),
                 "session": "OVERNIGHT",
             },
             "demo_scenario": "NORMAL",
         }
     )
-    result = gateway.check(
-        request,
-        {"decisions": []},
-        now=now,
-    )
+    result = gateway.check(request, {"decisions": []}, now=now)
     return {
         "data_mode": "SYNTHETIC_PORTFOLIO_DEMO",
+        "inputs_are_editable": True,
         "order": {
-            "symbol": "NVDA",
-            "requested_notional_usd": 10000,
-            "requested_leverage": 10,
+            "symbol": symbol,
+            "requested_notional_usd": float(requested_notional_usd),
+            "requested_leverage": float(requested_leverage),
             "session": "OVERNIGHT",
         },
+        "account": {
+            "equity_usd": float(account_equity_usd),
+            "existing_position_usd": float(existing_position_usd),
+            "portfolio_positions": positions,
+        },
         "result": result,
-        "boundary": (
-            "Portfolio concentration uses transparent policy buckets, not "
-            "claimed live covariance. The host can supply measured sector/factor "
-            "metadata later without changing the API."
-        ),
+        "boundary": "Portfolio composition is a parameterized synthetic fixture. The risk result is computed by the same gateway used by the integration endpoint.",
     }
