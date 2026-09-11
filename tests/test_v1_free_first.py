@@ -24,6 +24,22 @@ def test_free_first_registry_separates_capability_from_health(monkeypatch):
     sec = next(item for item in payload["providers"] if item["id"] == "sec-edgar")
     assert sec["status"] == "SUPPORTED"
     assert sec["health"] == "NOT_PROBED"
+    twelve = next(item for item in payload["providers"] if item["id"] == "twelve-data")
+    assert twelve["risk_eligible"] is False
+
+
+def test_twelve_data_registry_requires_explicit_risk_opt_in(monkeypatch):
+    monkeypatch.setenv("TWELVE_DATA_API_KEY", "configured")
+    monkeypatch.delenv("TWELVE_DATA_RISK_ELIGIBLE", raising=False)
+    default = provider_registry({"providers": []})
+    twelve = next(item for item in default["providers"] if item["id"] == "twelve-data")
+    assert twelve["configured"] is True
+    assert twelve["risk_eligible"] is False
+
+    monkeypatch.setenv("TWELVE_DATA_RISK_ELIGIBLE", "1")
+    opted_in = provider_registry({"providers": []})
+    twelve = next(item for item in opted_in["providers"] if item["id"] == "twelve-data")
+    assert twelve["risk_eligible"] is True
 
 
 def test_war_room_poisoned_mark_is_parameterized_and_synthetic():
