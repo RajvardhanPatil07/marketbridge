@@ -148,49 +148,81 @@ def _runtime_by_id(snapshot: dict[str, Any] | None) -> dict[str, dict[str, Any]]
 
 
 def provider_registry(snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Return the judge-facing provider mesh without legacy/paid-provider leakage."""
+    """Return capability metadata separately from observed runtime health."""
     runtime = _runtime_by_id(snapshot)
     items: list[dict[str, Any]] = []
+
     for definition in PROVIDERS:
         row = asdict(definition)
         row["credential_env"] = list(definition.credential_env)
         configured = definition.configured()
         observed = runtime.get(definition.id, {})
-        status = str(observed.get("status") or ("CONFIGURED" if configured else "NOT_CONFIGURED"))
-        if definition.id == "sec-edgar":
-            status = "READY"
-        elif definition.id == "nasdaq-symbols":
-            status = "READY"
-        elif definition.id == "yahoo" and os.environ.get("MARKETBRIDGE_DISABLE_RESEARCH_FEED", "1") == "1":
+        observed_status = str(observed.get("status") or "").upper()
+
+        if definition.id == "yahoo" and os.environ.get(
+            "MARKETBRIDGE_DISABLE_RESEARCH_FEED", "1"
+        ) == "1":
             status = "DISABLED"
-        elif definition.id == "twelve-data" and configured:
-            # A free key does not imply unrestricted WebSocket/display rights.
-            status = "OPTIONAL"
+            health = "DISABLED"
+        elif observed:
+            status = observed_status or "OBSERVED"
+            if observed_status in {"AVAILABLE", "AUTHENTICATED", "READY"}:
+                health = "HEALTHY"
+            elif observed_status in {"LIMITED", "DEGRADED", "RETRYING"}:
+                health = "DEGRADED"
+            elif observed_status in {"DISABLED", "FAILED", "ERROR"}:
+                health = "UNHEALTHY"
+            else:
+                health = "OBSERVED"
+        elif not configured:
+            status = "NOT_CONFIGURED"
+            health = "NOT_OBSERVED"
+        elif definition.credential_env:
+            status = "CONFIGURED"
+            health = "NOT_OBSERVED"
+        else:
+            # Public adapters are supported by the application, but "supported"
+            # is not the same claim as "reachable right now".
+            status = "SUPPORTED"
+            health = "NOT_PROBED"
+
+        if definition.id == "twelve-data" and configured and not observed:
+            status = "OPTIONAL_CONFIGURED"
+
+        runtime_fields = {
+            key: observed.get(key)
+            for key in (
+                "detail",
+                "last_event_time",
+                "last_message_time",
+                "retry_count",
+                "consecutive_failures",
+                "qualification_capable",
+            )
+            if key in observed
+        }
         row.update(
+            supported=True,
             configured=configured,
             status=status,
-            runtime={
-                key: observed.get(key)
-                for key in (
-                    "detail", "last_event_time", "last_message_time", "retry_count",
-                    "consecutive_failures", "qualification_capable",
-                )
-                if key in observed
-            },
+            health=health,
+            observed=bool(observed),
+            runtime=runtime_fields,
         )
         items.append(row)
 
     return {
-        "architecture_version": "marketbridge-v1-free-first",
+        "architecture_version": "marketbridge-v1-dynamic-demo",
         "cost_mode": "FREE_FIRST",
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "principles": [
+            "Supported, configured and observed-health are separate states.",
             "Provider names are adapters, not architecture.",
             "Venue evidence never feeds back into the independent underlying reference.",
             "News, filings, macro and research data are context-only.",
             "One free IEX feed is one witness, not independent market consensus.",
             "Unknown entitlement or public-display permission is treated conservatively.",
-            "Synthetic attack fixtures are explicitly labelled and use the same risk policy as the integration demo.",
+            "Synthetic fixtures use generic witness identities and the same risk policy as the integration path.",
         ],
         "providers": items,
     }

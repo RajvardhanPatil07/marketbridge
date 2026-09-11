@@ -78,10 +78,14 @@ class RiskGateway:
             ).total_seconds(),
         )
         if request.demo_scenario:
+            # Synthetic mode is deliberately generic: it never borrows a real
+            # provider's name. The scenario reference is supplied by the War Room
+            # (live display derived or an explicitly synthetic fallback) through
+            # oracle_price, then two deterministic fixture witnesses bracket it.
             reference = (
-                Decimal("184.52")
-                if request.symbol == "NVDA"
-                else request.market.mark_price
+                request.market.oracle_price
+                or request.market.mid_price
+                or request.market.mark_price
             )
             divergence = (
                 abs(request.market.mark_price / reference - 1)
@@ -100,33 +104,39 @@ class RiskGateway:
                 stable,
                 now,
             )
+            witness_a = (reference * Decimal("0.9999")).quantize(Decimal("0.000001"))
+            witness_b = (reference * Decimal("1.0001")).quantize(Decimal("0.000001"))
             evidence = [
                 {
-                    "provider": "synthetic-demo-alpaca",
-                    "provider_family": "synthetic-demo-alpaca",
-                    "venue_family": "NASDAQ",
+                    "provider": "Synthetic Witness A",
+                    "provider_family": "synthetic-fixture-a",
+                    "venue_family": "SIMULATED_VENUE_A",
+                    "observed_price": witness_a,
                     "event_time": _iso(now),
                     "fresh": True,
                     "eligible": True,
+                    "source_mode": "SYNTHETIC_FIXTURE",
                     "observation_hash": canonical_hash(
                         {
-                            "provider": "synthetic-demo-alpaca",
-                            "price": "184.50",
+                            "provider": "synthetic-fixture-a",
+                            "price": str(witness_a),
                             "event_time": _iso(now),
                         }
                     ),
                 },
                 {
-                    "provider": "synthetic-demo-twelve-data",
-                    "provider_family": "synthetic-demo-twelve-data",
-                    "venue_family": "TWELVE_DATA.US_EQUITIES",
+                    "provider": "Synthetic Witness B",
+                    "provider_family": "synthetic-fixture-b",
+                    "venue_family": "SIMULATED_VENUE_B",
+                    "observed_price": witness_b,
                     "event_time": _iso(now),
                     "fresh": True,
                     "eligible": True,
+                    "source_mode": "SYNTHETIC_FIXTURE",
                     "observation_hash": canonical_hash(
                         {
-                            "provider": "synthetic-demo-twelve-data",
-                            "price": "184.54",
+                            "provider": "synthetic-fixture-b",
+                            "price": str(witness_b),
                             "event_time": _iso(now),
                         }
                     ),
@@ -156,7 +166,7 @@ class RiskGateway:
                 "entitled": True,
                 "evidence": evidence,
                 "data_mode": "SYNTHETIC_DEMO",
-                "model_version": "marketbridge-shadow-v0.3",
+                "model_version": "synthetic-fixture-v2",
             }
 
         decision = next(
@@ -212,9 +222,11 @@ class RiskGateway:
                 "provider": item.get("source_id"),
                 "provider_family": item.get("provider_family"),
                 "venue_family": item.get("venue_family"),
+                "observed_price": item.get("price"),
                 "event_time": item.get("event_time"),
                 "fresh": bool(item.get("fresh")),
                 "eligible": bool(item.get("eligible")),
+                "source_mode": "LIVE_PROVIDER",
                 "observation_hash": canonical_hash(
                     {
                         key: item.get(key)

@@ -79,15 +79,30 @@ def test_portfolio_firewall_caps_single_name_concentration():
     assert 0 < assessment["max_additional_notional_usd"] < 10000
 
 
-def test_portfolio_demo_returns_safe_alternative_and_passport():
-    payload = portfolio_demo(ROOT)
-    result = payload["result"]
-    assert result["action"] == "CAP_LEVERAGE"
-    assert result["permitted_leverage"] == 3
-    assert 0 < result["permitted_notional_usd"] < 10000
-    assert result["safe_alternative"]["available"] is True
-    assert result["portfolio_risk"]["enabled"] is True
-    assert result["passport_id"].startswith("mbp_")
+def test_portfolio_demo_recomputes_from_editable_inputs():
+    first = portfolio_demo(
+        ROOT,
+        symbol="NVDA",
+        requested_notional_usd=10000,
+        requested_leverage=10,
+        account_equity_usd=10000,
+        existing_position_usd=22000,
+    )
+    second = portfolio_demo(
+        ROOT,
+        symbol="NVDA",
+        requested_notional_usd=25000,
+        requested_leverage=15,
+        account_equity_usd=20000,
+        existing_position_usd=5000,
+    )
+    assert first["inputs_are_editable"] is True
+    assert second["order"]["requested_notional_usd"] == 25000
+    assert second["order"]["requested_leverage"] == 15
+    assert first["result"]["passport_id"].startswith("mbp_")
+    assert second["result"]["passport_id"].startswith("mbp_")
+    assert first["result"]["requested_notional_usd"] != second["result"]["requested_notional_usd"]
+    assert first["result"]["portfolio_risk"]["enabled"] is True
 
 
 def test_historical_reconstruction_uses_live_policy_function_without_hindsight():
@@ -102,13 +117,15 @@ def test_historical_reconstruction_uses_live_policy_function_without_hindsight()
     )
 
 
-def test_labeled_benchmark_reports_confusion_matrix_and_measured_latency():
-    payload = risk_gate_benchmark(ROOT, 10)
-    matrix = payload["classification"]["confusion_matrix"]
-    assert payload["data_mode"] == "SYNTHETIC_LABELED_BENCHMARK"
-    assert payload["cases"] == 90
-    assert matrix["fp"] == 0
-    assert matrix["fn"] == 0
+def test_seeded_benchmark_reports_invariants_and_measured_latency():
+    payload = risk_gate_benchmark(ROOT, 250, 20260911)
+    assert payload["data_mode"] == "SYNTHETIC_POLICY_REGRESSION"
+    assert payload["cases"] == 250
+    assert payload["seed"] == 20260911
+    assert sum(payload["actions"].values()) == 250
+    assert payload["invariants"]["total_violations"] == 0
+    assert payload["coverage"]["stale"] > 0
+    assert payload["coverage"]["large_divergence"] > 0
     assert payload["latency"]["core_policy_ms"]["p95"] >= 0
     assert payload["latency"]["in_process_gateway_ms"]["p95"] >= 0
     assert payload["economics"]["llm_calls_in_risk_critical_path"] == 0

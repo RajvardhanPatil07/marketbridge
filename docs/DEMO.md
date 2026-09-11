@@ -13,7 +13,15 @@ Open:
 http://127.0.0.1:8000/demo/
 ```
 
-The War Room requires no market-data key. It is a deterministic `SYNTHETIC_DEMO` that exercises the same `RiskGateway`, policy and Safety Passport implementation as the integration path.
+The War Room uses the same `RiskGateway`, policy and Safety Passport implementation as the integration path.
+
+It has three evidence modes:
+
+- **AUTO** — use a genuinely qualified live reference if the independent-provider quorum exists; otherwise use a clearly labelled synthetic fixture.
+- **LIVE** — require a qualified live reference or return an explicit error.
+- **SYNTHETIC** — force the parameterized synthetic fixture.
+
+No synthetic evidence is presented under a real provider's name.
 
 ## 90–150 second pitch
 
@@ -21,48 +29,58 @@ The War Room requires no market-data key. It is a deterministic `SYNTHETIC_DEMO`
 
 > US stocks sleep. Equity perpetuals don't. A 24/7 leveraged venue can keep trading while the underlying stock has weak or closed price discovery. MarketBridge verifies the market before leverage acts on it.
 
-### 15–35s — normal
+### 15–30s — prove the inputs are real inputs
+
+Before clicking the scenario buttons, change at least two controls:
+
+- symbol;
+- requested notional;
+- leverage;
+- attack bps;
+- account equity;
+- existing exposure.
+
+Point out the **DATA MODE**, **BASELINE SOURCE** and **DISPLAY BASELINE** fields.
+
+Say:
+
+> These numbers are inputs, not a prepared screenshot. Every click recomputes the decision through the same risk gateway.
+
+### 30–50s — normal
 
 Click **1 · Normal market**.
 
 Point out:
 
-- two visibly synthetic independent evidence witnesses;
-- Market Truth around the fixture reference;
-- venue mark almost equal to the reference;
-- 10× / $10,000 OPEN → `ALLOW`.
+- the explicit live/synthetic mode;
+- the evidence provider identities;
+- observed price and evidence age;
+- Market Truth and venue mark;
+- the recomputed order decision.
 
-### 35–65s — attack
+If AUTO falls back to synthetic mode, say so explicitly. That is expected when a two-family live quorum is unavailable.
 
-Click **2 · Poison venue mark**.
+### 50–75s — attack
 
-The venue mark moves roughly 300 bps away while the independent evidence stays stable.
+Choose an attack magnitude, then click **2 · Poison venue mark**.
 
-Point to the visual flow:
-
-```text
-WITNESS A ──┐
-            ├── MARKET TRUTH ── vs ── POISONED VENUE MARK
-WITNESS B ──┘                              │
-                                           ▼
-                                  BLOCK NEW RISK
-```
+The venue mark is calculated from the current scenario baseline and the selected basis-point attack.
 
 Say:
 
-> We did not ask AI whether this looks scary. A deterministic market-integrity policy sees that the leveraged venue mark no longer agrees with the independent reference and fails new risk closed.
+> We did not ask AI whether this looks scary. The venue mark is compared against independently qualified Market Truth, and the deterministic consequence policy decides whether new risk may proceed.
 
-### 65–80s — exit invariant
+### 75–90s — exit invariant
 
 Click **3 · Prove exit stays open**.
 
-The same poisoned market now receives a `CLOSE` intent and returns `ALLOW`.
+The same degraded market receives a `CLOSE` intent and should return `ALLOW`.
 
 Say:
 
-> MarketBridge does not trap the customer. Valid reduce and close paths survive evidence degradation; only new/increased exposure is blocked.
+> MarketBridge does not trap the customer. Valid reduce and close paths survive evidence degradation; only new or increased exposure is restricted.
 
-### 80–105s — proof
+### 90–110s — proof
 
 Show the Safety Passport:
 
@@ -76,17 +94,17 @@ Say:
 
 > The decision is not just a dashboard warning. It is a short-lived, replayable receipt of what the system knew and what policy acted on it.
 
-### 105–125s — counterfactual
+### 110–130s — counterfactual
 
-Return to the poisoned OPEN scenario if needed and click **Replay without safety gate**.
+Return to a restricted OPEN scenario and click **Replay without safety gate**.
 
-The comparison must be described as:
+Describe the result only as:
 
 > additional **simulated** exposure prevented
 
 Never say guaranteed savings, avoided loss or a fill that did not occur.
 
-### 125–150s — recovery
+### 130–150s — recovery
 
 Click **4 · Recover safely**.
 
@@ -96,11 +114,22 @@ Say:
 
 > One clean tick is not enough to turn leverage back on after a market-integrity incident. Recovery is deliberately sticky.
 
-## Optional technical follow-up
+## Proof-first technical follow-up
+
+At the top of `/demo/`, show the **seeded policy regression**:
+
+- varied cases, not 50 copies of the same scenario;
+- reported random seed;
+- action distribution;
+- invariant violations;
+- measured p50/p95/p99;
+- coverage counts.
+
+Then change the **Portfolio Risk Firewall** inputs and click **Recompute risk**. The safe notional and leverage should change.
 
 Open `/providers/`:
 
-> The hackathon build is free-first. Alpaca/IEX is the free underlying stream, Hyperliquid is venue context, and news/SEC are a separate context plane. The architecture is provider-agnostic, so a venue can replace adapters with its licensed feeds without rewriting the risk gate.
+> Supported capability, configuration and observed health are separate. An unprobed adapter is not labelled READY.
 
 Open `/intelligence/`:
 
@@ -110,11 +139,11 @@ Open `/intelligence/`:
 
 ### Why not simply average two APIs?
 
-Provider count is not automatically infrastructure independence. MarketBridge tracks provider family and venue family separately and refuses to turn duplicated/correlated delivery into fake confidence.
+Provider count is not automatically infrastructure independence. MarketBridge tracks provider family and venue family separately and refuses to turn duplicated or correlated delivery into fake confidence.
 
-### Why synthetic attack data?
+### Why keep synthetic mode?
 
-A deterministic adversarial fixture makes the hackathon demonstration reproducible, works without paid market licenses, and is visibly labelled. Live data remains available separately when credentials/rights exist.
+A deterministic adversarial fixture makes the attack reproducible and works without paid market licences. The fixture is visibly labelled, parameterized, and uses generic witness identities. AUTO/LIVE can use qualified runtime evidence when it really exists.
 
 ### Why is AI not deciding?
 
