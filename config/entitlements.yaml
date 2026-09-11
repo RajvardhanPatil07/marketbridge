@@ -1,12 +1,9 @@
 {
-  "version": "entitlement-policy-v1.1.0",
+  "version": "entitlement-policy-v1.2.0",
   "providers": {
     "alpaca": {"display": true, "non_display_computation": true, "derived_values": true, "retention": false, "redistribution": false, "incident_replay": false},
     "databento": {"display": false, "non_display_computation": true, "derived_values": true, "retention": false, "redistribution": false, "incident_replay": false},
-    "twelve-data": {"display": false, "non_display_computation": true, "derived_values": true, "retention": false, "redistribution": false, "incident_replay": false},
-    "synthetic-demo-alpaca": {"display": true, "non_display_computation": true, "derived_values": true, "retention": true, "redistribution": true, "incident_replay": true},
-    "synthetic-demo-databento": {"display": true, "non_display_computation": true, "derived_values": true, "retention": true, "redistribution": true, "incident_replay": true},
-    "synthetic-demo-twelve-data": {"display": true, "non_display_computation": true, "derived_values": true, "retention": true, "redistribution": true, "incident_replay": true}
+    "twelve-data": {"display": false, "non_display_computation": true, "derived_values": true, "retention": false, "redistribution": false, "incident_replay": false}
   },
-  "production_note": "These conservative prototype defaults are not a substitute for contractual entitlement verification."
+  "production_note": "These conservative prototype defaults are not a substitute for contractual entitlement verification. Synthetic fixtures are handled explicitly by the demo path and do not impersonate provider entitlements."
 }
