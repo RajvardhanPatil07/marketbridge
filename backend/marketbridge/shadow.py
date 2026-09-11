@@ -971,6 +971,7 @@ class LivePipeline:
             alpaca_errors.append("ALPACA_FEED_UNSUPPORTED")
         credentials_configured = api_key and secret_key
         twelve_data_configured = bool(os.environ.get("TWELVE_DATA_API_KEY", "").strip())
+        twelve_data_risk_eligible = _env_enabled("TWELVE_DATA_RISK_ELIGIBLE")
         qualification_capable = credentials_configured and feed in ALPACA_MULTI_VENUE_FEEDS
         if credentials_configured and feed == "iex":
             warnings.append("ALPACA_IEX_SINGLE_VENUE")
@@ -1009,7 +1010,9 @@ class LivePipeline:
         errors = [*errors, *alpaca_errors, *hyperliquid_errors]
 
         execution_evidence_configured = qualification_capable or (
-            credentials_configured and twelve_data_configured
+            credentials_configured
+            and twelve_data_configured
+            and twelve_data_risk_eligible
         )
         return {
             "strict_live_data": _env_enabled("MARKETBRIDGE_REQUIRE_LIVE_DATA"),
@@ -1025,7 +1028,8 @@ class LivePipeline:
                 "credentials_configured": twelve_data_configured,
                 "endpoint": "quotes/price",
                 "tracked_symbols": len(self._active_symbols("twelve-data")),
-                "qualification_capable": twelve_data_configured,
+                "risk_eligible_opt_in": twelve_data_risk_eligible,
+                "qualification_capable": twelve_data_configured and twelve_data_risk_eligible,
                 "errors": [],
             },
             "hyperliquid_configured": bool(coin_map),
@@ -1079,7 +1083,7 @@ class LivePipeline:
                 "status": "CONNECTING",
                 "kind": "DIRECT_MARKET",
                 "detail": "quotes/price WebSocket",
-                "qualification_capable": True,
+                "qualification_capable": configuration["twelve_data"]["qualification_capable"],
                 "retry_count": 0,
                 "consecutive_failures": 0,
             }
@@ -1366,7 +1370,7 @@ class LivePipeline:
             source_id="twelve-data-quotes-price",
             source_family="twelve-data-us-equities",
             venue=exchange or "TWELVE_DATA.US_EQUITIES",
-            eligible=True,
+            eligible=_env_enabled("TWELVE_DATA_RISK_ELIGIBLE"),
             provider_family="twelve-data",
             # It remains one vendor feed even when the payload names an exchange.
             venue_family="twelve-data-us-equities",
@@ -1397,12 +1401,16 @@ class LivePipeline:
                     permanent=True,
                 )
             session["subscribed_symbols"] = subscribed
+            risk_eligible = _env_enabled("TWELVE_DATA_RISK_ELIGIBLE")
             status = "AVAILABLE" if subscribed else "LIMITED"
             self._set_provider(
                 "twelve-data",
                 status=status,
-                detail=f"quotes/price: {len(subscribed)}/{len(session.get('requested_symbols', set()))} symbols subscribed",
-                qualification_capable=bool(subscribed),
+                detail=(
+                    f"quotes/price: {len(subscribed)}/{len(session.get('requested_symbols', set()))} "
+                    + ("symbols subscribed; risk opt-in enabled" if risk_eligible else "symbols subscribed; context-only")
+                ),
+                qualification_capable=bool(subscribed) and risk_eligible,
                 auth_time=_iso(received_at),
                 subscription_time=_iso(received_at),
                 last_message_time=_iso(received_at),
@@ -1436,8 +1444,12 @@ class LivePipeline:
         decision = self.oracle.ingest(observation)
         values = {
             "status": "AVAILABLE",
-            "detail": "quotes/price WebSocket",
-            "qualification_capable": True,
+            "detail": (
+                "quotes/price WebSocket; risk opt-in enabled"
+                if _env_enabled("TWELVE_DATA_RISK_ELIGIBLE")
+                else "quotes/price WebSocket; context-only"
+            ),
+            "qualification_capable": _env_enabled("TWELVE_DATA_RISK_ELIGIBLE"),
             "last_event_time": _iso(event_time),
             "last_trade_time": _iso(received_at),
             "last_message_time": _iso(received_at),
