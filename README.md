@@ -16,6 +16,15 @@
 
 ---
 
+## Positioning in one glance
+
+| System | Primary question |
+|---|---|
+| Trading AI / agent terminal | Where might price go? |
+| Fraud / trust engine | Can we trust the user or activity? |
+| Margin engine | How much leverage can the account survive? |
+| **MarketBridge** | **Can we trust the market price that leverage depends on?** |
+
 ## What MarketBridge does
 
 A 24/7 equity perpetual can keep trading when the underlying US stock has thin, stale, closed-session, or conflicting price discovery. MarketBridge sits beside the venue and asks a simple question before new leverage is allowed:
@@ -44,9 +53,11 @@ account exposure + order intent ────────────────
 
 Valid `REDUCE` and `CLOSE` requests remain available when evidence degrades. `OPEN` and `INCREASE` fail closed when Market Truth is not sufficiently qualified.
 
+> **Mochatrade users post rupee margin against a market that can keep price-discovering while they sleep.**
+
 ## Proof before the synthetic attack
 
-The `/demo/` judge flow now starts with evidence before the controlled War Room:
+The `/demo/` judge flow starts with evidence before the controlled War Room:
 
 1. **Historical reconstruction** — published July 2026 SK Hynix / TradeXYZ observations pass through the same deterministic consequence function used by the live risk gate. It is explicitly counterfactual and consumes no future outcome.
 2. **Operating benchmark** — a labeled 450-case safety suite reports TP/TN/FP/FN, false-positive and false-negative rates, precision/recall, and measured core/gateway p50/p95/p99 latency.
@@ -119,7 +130,7 @@ Marketaux news, SEC filings/fundamentals, FRED and optional research sources hel
 | Route | Purpose |
 |---|---|
 | `/` | v1 product thesis and first-view demo CTA |
-| `/demo/` | Market Truth War Room: attack → block → exit → passport → replay → recovery |
+| `/demo/` | proof-first judge flow + Market Truth War Room |
 | `/providers/` | Free-first capability/provider mesh and trust boundaries |
 | `/intelligence/` | Marketaux news + official SEC context, visibly separated from Market Truth |
 | `/markets/` | Existing live market monitor |
@@ -191,9 +202,14 @@ MarketBridge is a hackathon/pilot advisory architecture, **not** a certified exc
 - Unknown entitlement/display rights are treated conservatively.
 - Counterfactual replay reports prevented **simulated additional exposure**, not guaranteed savings.
 
-## Team and license
+## Attribution and license
 
-**Team FinalCommit:** Harshil Amin · Aniket Gaikwad. Implementation provenance remains visible in Git history; [TEAM.md](./TEAM.md) intentionally avoids inventing role attribution.
+Repository attribution is intentionally limited to contributors visible in this project rather than claiming another hackathon team identity:
+
+- `@RajvardhanPatil07`
+- `@parthdongre`
+
+Before final submission, ensure the official hackathon registration names exactly match the submission form. See [TEAM.md](./TEAM.md).
 
 Licensed under MIT. See [LICENSE](./LICENSE).
 
