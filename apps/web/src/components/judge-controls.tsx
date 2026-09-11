@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useMarketData } from "@/components/market-data-provider";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
+const LIVE_ATTACK_BPS = 350;
 
 type LiveResult = {
   available: boolean;
@@ -58,7 +60,7 @@ function inr(value: number | null | undefined) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
 }
 
-function safeOrderPayload() {
+function safeOrderPayload(baseline: number) {
   const now = new Date().toISOString();
   return {
     request: {
@@ -80,13 +82,15 @@ function safeOrderPayload() {
           { symbol: "TSLA", notional_usd: 3000, sector: "CONSUMER_DISCRETIONARY", correlation_group: "HIGH_BETA_GROWTH" },
         ],
       },
-      market: { mark_price: 184.51, event_time: now, session: "OVERNIGHT" },
+      market: { mark_price: baseline, oracle_price: baseline, event_time: now, session: "OVERNIGHT" },
       demo_scenario: "NORMAL",
     },
   };
 }
 
 export function JudgeControls() {
+  const { assets } = useMarketData();
+  const safeBaseline = assets.find((asset) => asset.symbol === "NVDA")?.price ?? 200;
   const [live, setLive] = useState<LiveResult | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
   const [safe, setSafe] = useState<SafeOrderResult | null>(null);
@@ -100,7 +104,7 @@ export function JudgeControls() {
       const response = await fetch(`${API_BASE}/v1/demo/live-baseline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol: "NVDA", inject_attack: injectAttack, requested_notional_usd: 10000, requested_leverage: 10 }),
+        body: JSON.stringify({ symbol: "NVDA", inject_attack: injectAttack, attack_bps: LIVE_ATTACK_BPS, requested_notional_usd: 10000, requested_leverage: 10 }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.detail ?? `Live baseline failed (${response.status})`);
@@ -119,7 +123,7 @@ export function JudgeControls() {
       const response = await fetch(`${API_BASE}/v1/order/safe-alternative`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(safeOrderPayload()),
+        body: JSON.stringify(safeOrderPayload(safeBaseline)),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.detail ?? `Safe order failed (${response.status})`);
@@ -144,7 +148,7 @@ export function JudgeControls() {
       <div className="judge-grid">
         <article className="judge-card">
           <div className="judge-card-title"><span>LIVE BASELINE ATTACK</span><b>PROVENANCE VISIBLE</b></div>
-          <p>Start from the backend's current evidence. Then inject only the venue mark at +307.8 bps and run the normal risk gate.</p>
+          <p>Start from the backend&apos;s current evidence. Then inject only the venue mark at +{LIVE_ATTACK_BPS} bps and run the normal risk gate.</p>
           <div className="judge-actions">
             <button disabled={liveLoading} onClick={() => void runLive(false)}>Read live baseline</button>
             <button className="danger" disabled={liveLoading} onClick={() => void runLive(true)}>Inject venue attack</button>
