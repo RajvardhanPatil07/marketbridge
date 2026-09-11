@@ -104,7 +104,7 @@ MarketBridge v1 is provider-agnostic and does not require a paid institutional f
 | Financial news | **Marketaux** | Cached ticker-linked context only |
 | Official company events/facts | **SEC EDGAR** | Primary-source filings and XBRL context; no API key |
 | Symbol/reference metadata | **Nasdaq Symbol Directory** | Security master |
-| Optional equity cross-check | **Twelve Data** | Optional/internal only unless the actual account entitlement permits the intended use |
+| Optional equity cross-check | **Twelve Data** | Context/internal by default; risk-eligible only after explicit `TWELVE_DATA_RISK_ELIGIBLE=1` entitlement opt-in |
 | Research fallback | **Yahoo/yfinance** | Legacy research-only, disabled by default, never risk eligible |
 | Optional macro context | **FRED** | Context only |
 | Optional crypto overview | **CoinGecko Demo** | Display/context only |
