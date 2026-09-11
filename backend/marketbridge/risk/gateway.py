@@ -222,9 +222,11 @@ class RiskGateway:
                 "provider": item.get("source_id"),
                 "provider_family": item.get("provider_family"),
                 "venue_family": item.get("venue_family"),
+                "observed_price": item.get("price"),
                 "event_time": item.get("event_time"),
                 "fresh": bool(item.get("fresh")),
                 "eligible": bool(item.get("eligible")),
+                "source_mode": "LIVE_PROVIDER",
                 "observation_hash": canonical_hash(
                     {
                         key: item.get(key)
