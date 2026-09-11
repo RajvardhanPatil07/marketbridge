@@ -80,7 +80,16 @@ export function mergeDisplaySnapshots(assets: MarketAsset[], snapshots: DisplayS
       ageSeconds: hasOracleReference ? existing.ageSeconds : snapshot.event_time ? Math.max(0, (Date.now() - Date.parse(snapshot.event_time)) / 1000) : existing?.ageSeconds ?? null,
       bid: snapshot.bid ?? existing?.bid ?? null, ask: snapshot.ask ?? existing?.ask ?? null,
       dayVolume: snapshot.day_volume ?? existing?.dayVolume ?? null,
-      points: existing?.points ?? [], status: existing?.status ?? "DISPLAY_ONLY", confidence: existing?.confidence ?? null,
+      points: (() => {
+        const points = [...(existing?.points ?? [])];
+        if (snapshot.price != null && snapshot.event_time) {
+          const duplicate = points.some((point) => point.time === snapshot.event_time);
+          if (!duplicate) points.push({ time: snapshot.event_time, value: snapshot.price });
+        }
+        return points
+          .sort((left, right) => Date.parse(left.time) - Date.parse(right.time))
+          .slice(-32);
+      })(), status: existing?.status ?? "DISPLAY_ONLY", confidence: existing?.confidence ?? null,
       bandLower: existing?.bandLower ?? null, bandUpper: existing?.bandUpper ?? null, riskState: existing?.riskState ?? null,
       divergenceBps: existing?.divergenceBps ?? null, leverage: existing?.leverage ?? null,
       evidenceCount: existing?.evidenceCount ?? 0, reasons: existing?.reasons ?? ["DISPLAY_SNAPSHOT_ONLY"],
