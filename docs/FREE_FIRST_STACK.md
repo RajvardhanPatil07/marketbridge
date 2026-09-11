@@ -4,7 +4,7 @@ Prepared for the 2026 hackathon build. Provider plans and usage rights can chang
 
 ## Required for the public demo
 
-**Nothing.** `/demo/` uses explicit deterministic `SYNTHETIC_DEMO` fixtures and the real MarketBridge risk policy. This makes the demo reliable and reproducible.
+**Nothing.** `/demo/` runs without secrets: `AUTO` uses qualified live evidence when a real independent-provider quorum exists and otherwise falls back to an explicit deterministic `SYNTHETIC_DEMO` fixture using the same risk policy. `LIVE` mode fails visibly when that quorum is unavailable.
 
 ## Recommended free live configuration
 
