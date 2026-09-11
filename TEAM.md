@@ -1,10 +1,12 @@
-# Team
+# Project attribution
 
-## FinalCommit
+MarketBridge is maintained in `RajvardhanPatil07/marketbridge`.
 
-Hackathon submission members currently documented for this project:
+Repository contributors currently visible in the project history include:
 
-- Harshil Amin
-- Aniket Gaikwad
+- `@RajvardhanPatil07`
+- `@parthdongre`
 
-Implementation provenance remains visible in Git history. This file intentionally avoids inventing role attribution. During judging, the team should be able to explain the Market Truth quorum, provider-independence rule, portfolio cap, recovery hysteresis, and Safety Passport flow.
+This file deliberately does **not** claim a hackathon team name or invent role attribution. Before final submission, make sure the names shown in the official hackathon form exactly match the registered participants.
+
+During judging, every listed participant should be able to explain the Market Truth quorum, provider-independence rule, portfolio cap, recovery hysteresis, and Safety Passport flow.
