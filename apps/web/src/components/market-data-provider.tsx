@@ -9,10 +9,6 @@ const MarketDataContext = createContext<MarketDataContextValue | null>(null);
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
 const friendlyError = (status?: number) => status === 401 || status === 403 ? "Market data access is not authorized." : status === 429 ? "Market data is rate limited. Updates will resume automatically." : "The market-data service is unavailable. The synthetic War Room remains available.";
 
-function sanitizeSnapshot(next: ShadowSnapshot): ShadowSnapshot {
-  return { ...next, providers: next.providers.filter((provider) => provider.id !== "databento") };
-}
-
 function providerConnection(next: ShadowSnapshot): ConnectionState {
   const live = next.providers.some((provider) => ["alpaca", "hyperliquid", "twelve-data"].includes(provider.id) && ["AVAILABLE", "LIMITED", "AUTHENTICATED"].includes(provider.status));
   if (live) return "live";
@@ -29,8 +25,7 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
   const fallbackStarted = useRef(false);
   const alpacaConfigured = snapshot?.configuration.alpaca.credentials_configured ?? false;
 
-  const accept = useCallback((incoming: ShadowSnapshot) => {
-    const next = sanitizeSnapshot(incoming);
+  const accept = useCallback((next: ShadowSnapshot) => {
     setSnapshot(next); setError(null); setLoading(false); setConnection(providerConnection(next));
   }, []);
 
