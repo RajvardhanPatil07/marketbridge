@@ -20,10 +20,22 @@ type WarRoomResult = {
   scenario: string;
   intent: string;
   symbol: string;
+  inputs: {
+    requested_notional_usd: number;
+    requested_leverage: number;
+    account_equity_usd: number;
+    existing_position_usd: number;
+    attack_bps: number;
+  };
   story: {
     headline: string;
     detail: string;
+    requested_mode: string;
     data_mode: string;
+    baseline_source: string;
+    baseline_price: number;
+    attack_bps: number;
+    synthetic: boolean;
     no_trade_submitted: boolean;
     reference_price: number | null;
     venue_mark: number | null;
@@ -46,13 +58,25 @@ type WarRoomResult = {
     reduce_only_allowed: boolean;
     market: {
       reference_price: number | null;
+      reference_status?: string;
       venue_mark: number | null;
       divergence_bps: number | null;
       confidence: number | null;
       provider_count: number;
       venue_count: number;
       asset_state: string;
-      evidence: Array<{ provider: string; provider_family: string; venue_family: string; fresh: boolean; eligible: boolean; observation_hash: string }>;
+      data_mode?: string;
+      evidence: Array<{
+        provider: string;
+        provider_family: string;
+        venue_family: string;
+        observed_price?: number | null;
+        event_time?: string | null;
+        fresh: boolean;
+        eligible: boolean;
+        source_mode?: string;
+        observation_hash: string;
+      }>;
       recovery?: { stable_observations: number; required_observations: number; elapsed_seconds: number; minimum_duration_seconds: number };
     };
     passport: { chain_hash?: string; content_hash?: string; claims?: { policy?: { policy_version?: string } } };
@@ -76,7 +100,10 @@ type ProviderRow = {
   cost_mode: string;
   market_truth_authority: string;
   risk_eligible: boolean;
+  supported?: boolean;
   configured: boolean;
+  observed?: boolean;
+  health?: string;
   status: string;
   note: string;
   runtime?: Record<string, string | number | boolean | null>;
@@ -125,61 +152,204 @@ export function V1Home() {
   </div>;
 }
 
-async function fetchWarRoom(scenario: "NORMAL" | "POISONED_MARK" | "RECOVERY", intent: "OPEN" | "CLOSE" = "OPEN") {
-  const response = await fetch(`${API_BASE}/v1/demo/war-room`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario, intent, symbol: "NVDA" }) });
-  if (!response.ok) throw new Error(`War Room request failed (${response.status})`);
+type WarRoomControls = {
+  symbol: string;
+  mode: "AUTO" | "LIVE" | "SYNTHETIC";
+  requestedNotional: number;
+  requestedLeverage: number;
+  attackBps: number;
+  accountEquity: number;
+  existingPosition: number;
+  baselinePrice: number | null;
+};
+
+async function fetchWarRoom(
+  scenario: "NORMAL" | "POISONED_MARK" | "RECOVERY",
+  intent: "OPEN" | "CLOSE",
+  controls: WarRoomControls,
+) {
+  const response = await fetch(`${API_BASE}/v1/demo/war-room`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      scenario,
+      intent,
+      mode: controls.mode,
+      symbol: controls.symbol,
+      baseline_price: controls.baselinePrice,
+      requested_notional_usd: controls.requestedNotional,
+      requested_leverage: controls.requestedLeverage,
+      attack_bps: controls.attackBps,
+      account_equity_usd: controls.accountEquity,
+      existing_position_usd: controls.existingPosition,
+    }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `War Room request failed (${response.status})`);
+  }
   return await response.json() as WarRoomResult;
 }
 
+function evidenceAge(eventTime?: string | null) {
+  if (!eventTime) return "age unknown";
+  const age = Math.max(0, (Date.now() - new Date(eventTime).getTime()) / 1000);
+  return age < 60 ? `${age.toFixed(1)}s old` : `${Math.round(age / 60)}m old`;
+}
+
 export function WarRoom() {
+  const { assets } = useMarketData();
+  const [symbol, setSymbol] = useState("NVDA");
+  const [mode, setMode] = useState<"AUTO" | "LIVE" | "SYNTHETIC">("AUTO");
+  const [requestedNotional, setRequestedNotional] = useState(10000);
+  const [requestedLeverage, setRequestedLeverage] = useState(10);
+  const [attackBps, setAttackBps] = useState(350);
+  const [accountEquity, setAccountEquity] = useState(10000);
+  const [existingPosition, setExistingPosition] = useState(0);
   const [data, setData] = useState<WarRoomResult | null>(null);
   const [replay, setReplay] = useState<ReplayResult | null>(null);
   const [history, setHistory] = useState<Array<{ label: string; action: string; state: string; divergence: number | null }>>([]);
   const [busy, setBusy] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const selectedAsset = assets.find((asset) => asset.symbol === symbol);
+
+  const controls = (): WarRoomControls => ({
+    symbol,
+    mode,
+    requestedNotional: Math.max(1, Number(requestedNotional)),
+    requestedLeverage: Math.max(0.1, Number(requestedLeverage)),
+    attackBps: Math.max(0, Number(attackBps)),
+    accountEquity: Math.max(1, Number(accountEquity)),
+    existingPosition: Math.max(0, Number(existingPosition)),
+    baselinePrice: selectedAsset?.price ?? null,
+  });
 
   const apply = (next: WarRoomResult, label?: string) => {
-    setData(next); setReplay(null);
-    setHistory((items) => [...items.slice(-5), { label: label ?? next.scenario, action: next.result.action, state: next.result.market.asset_state, divergence: next.result.market.divergence_bps }]);
+    setData(next);
+    setReplay(null);
+    setHistory((items) => [...items.slice(-5), {
+      label: label ?? next.scenario,
+      action: next.result.action,
+      state: next.result.market.asset_state,
+      divergence: next.result.market.divergence_bps,
+    }]);
   };
+
   const run = async (scenario: "NORMAL" | "POISONED_MARK" | "RECOVERY", intent: "OPEN" | "CLOSE" = "OPEN") => {
-    setBusy(true); setError(null);
-    try { apply(await fetchWarRoom(scenario, intent), intent === "CLOSE" ? "CLOSE EXIT" : scenario); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : "Demo request failed"); }
-    finally { setBusy(false); }
+    setBusy(true);
+    setError(null);
+    try {
+      apply(await fetchWarRoom(scenario, intent, controls()), intent === "CLOSE" ? "CLOSE EXIT" : scenario);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Demo request failed");
+    } finally {
+      setBusy(false);
+    }
   };
+
   const recover = async () => {
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
       for (let index = 0; index < 3; index += 1) {
-        const next = await fetchWarRoom("RECOVERY", "OPEN"); apply(next, index === 2 ? "RECOVERED" : `RECOVERY ${index + 1}/3`);
+        const next = await fetchWarRoom("RECOVERY", "OPEN", controls());
+        apply(next, index === 2 ? "RECOVERED" : `RECOVERY ${index + 1}/3`);
         if (index < 2) await new Promise((resolve) => window.setTimeout(resolve, 1100));
       }
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Recovery demo failed"); }
-    finally { setBusy(false); }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Recovery demo failed");
+    } finally {
+      setBusy(false);
+    }
   };
+
   const compare = async () => {
     if (!data?.result.passport_id) return;
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
-      const response = await fetch(`${API_BASE}/v1/demo/war-room/replay`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passport_id: data.result.passport_id, mode: "WITHOUT_SAFETY_GATE" }) });
+      const response = await fetch(`${API_BASE}/v1/demo/war-room/replay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passport_id: data.result.passport_id, mode: "WITHOUT_SAFETY_GATE" }),
+      });
       if (!response.ok) throw new Error(`Replay failed (${response.status})`);
       setReplay(await response.json() as ReplayResult);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Replay failed"); }
-    finally { setBusy(false); }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Replay failed");
+    } finally {
+      setBusy(false);
+    }
   };
+
   const reset = async () => {
-    setBusy(true); await fetch(`${API_BASE}/v1/demo/war-room/reset`, { method: "POST" }); setHistory([]); setReplay(null); setData(null); setBusy(false);
+    setBusy(true);
+    await fetch(`${API_BASE}/v1/demo/war-room/reset`, { method: "POST" });
+    setHistory([]);
+    setReplay(null);
+    setData(null);
+    setBusy(false);
   };
+
   const actionClass = data?.result.action === "BLOCK_NEW_RISK" ? "blocked" : data?.result.action === "ALLOW" ? "allowed" : "guarded";
   return <div className="v1-page war-room">
-    <header className="v1-page-head"><div><span className="v1-eyebrow">SYNTHETIC ADVERSARIAL DEMO · SAME RISK POLICY</span><h1>Market Truth War Room</h1><p>One screen. One attack. One decision trail. No trade is submitted.</p></div><button className="v1-quiet" onClick={reset} disabled={busy}>Reset incident</button></header>
-    <section className="scenario-bar"><button onClick={() => run("NORMAL")} disabled={busy}>1 · Normal market</button><button className="danger" onClick={() => run("POISONED_MARK")} disabled={busy}>2 · Poison venue mark</button><button onClick={() => run("POISONED_MARK", "CLOSE")} disabled={busy}>3 · Prove exit stays open</button><button onClick={recover} disabled={busy}>4 · Recover safely</button></section>
+    <header className="v1-page-head">
+      <div>
+        <span className="v1-eyebrow">PARAMETERIZED ADVERSARIAL DEMO · SAME RISK POLICY</span>
+        <h1>Market Truth War Room</h1>
+        <p>Change the market, order and attack. The decision is recomputed; no trade is submitted.</p>
+      </div>
+      <div className="war-head-actions">
+        {data && <span className={`mode-chip ${data.story.synthetic ? "synthetic" : "live"}`}>{data.story.data_mode.replaceAll("_", " ")}</span>}
+        <button className="v1-quiet" onClick={reset} disabled={busy}>Reset incident</button>
+      </div>
+    </header>
+
+    <section className="war-controls">
+      <label><span>Symbol</span><select value={symbol} onChange={(event) => setSymbol(event.target.value)}>{["NVDA","TSLA","AAPL","MSFT","AMD"].map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label><span>Evidence mode</span><select value={mode} onChange={(event) => setMode(event.target.value as "AUTO" | "LIVE" | "SYNTHETIC")}><option>AUTO</option><option>LIVE</option><option>SYNTHETIC</option></select></label>
+      <label><span>Order notional</span><input type="number" min="1" step="500" value={requestedNotional} onChange={(event) => setRequestedNotional(Number(event.target.value))}/></label>
+      <label><span>Leverage</span><input type="number" min="1" max="100" step="1" value={requestedLeverage} onChange={(event) => setRequestedLeverage(Number(event.target.value))}/></label>
+      <label><span>Attack (bps)</span><input type="number" min="0" max="5000" step="25" value={attackBps} onChange={(event) => setAttackBps(Number(event.target.value))}/></label>
+      <label><span>Account equity</span><input type="number" min="1" step="1000" value={accountEquity} onChange={(event) => setAccountEquity(Number(event.target.value))}/></label>
+      <label><span>Existing position</span><input type="number" min="0" step="1000" value={existingPosition} onChange={(event) => setExistingPosition(Number(event.target.value))}/></label>
+      <div className="baseline-readout"><span>Display baseline</span><strong>{usd(selectedAsset?.price)}</strong><small>Used only as a labelled synthetic seed unless LIVE quorum is qualified.</small></div>
+    </section>
+
+    <section className="scenario-bar">
+      <button onClick={() => run("NORMAL")} disabled={busy}>1 · Normal market</button>
+      <button className="danger" onClick={() => run("POISONED_MARK")} disabled={busy}>2 · Poison venue mark</button>
+      <button onClick={() => run("POISONED_MARK", "CLOSE")} disabled={busy}>3 · Prove exit stays open</button>
+      <button onClick={recover} disabled={busy}>4 · Recover safely</button>
+    </section>
+
     {error && <div className="v1-error">{error}</div>}
-    {!data ? <section className="war-empty"><strong>Ready for the judge.</strong><p>Start with a normal market, then poison the venue mark. MarketBridge will compare the mark against independent synthetic witnesses, block new risk, preserve the exit path and issue a Safety Passport.</p><button className="v1-primary" onClick={() => run("NORMAL")} disabled={busy}>Start demo</button></section> : <>
+    {!data ? <section className="war-empty">
+      <strong>Ready for the judge.</strong>
+      <p>AUTO uses a genuinely qualified live reference when the provider quorum exists; otherwise it falls back to a clearly labelled synthetic fixture seeded from the current display price.</p>
+      <button className="v1-primary" onClick={() => run("NORMAL")} disabled={busy}>Start demo</button>
+    </section> : <>
+      <section className="provenance-strip">
+        <div><span>DATA MODE</span><strong>{data.story.data_mode.replaceAll("_", " ")}</strong></div>
+        <div><span>BASELINE SOURCE</span><strong>{data.story.baseline_source.replaceAll("_", " ")}</strong></div>
+        <div><span>BASELINE</span><strong>{usd(data.story.baseline_price)}</strong></div>
+        <div><span>ATTACK</span><strong>{data.story.attack_bps.toFixed(0)} bps</strong></div>
+        <button onClick={() => setShowEvidence((value) => !value)}>{showEvidence ? "Hide evidence" : "Inspect evidence"}</button>
+      </section>
       <section className="truth-stage">
-        <div className="evidence-column"><span className="v1-kicker">INDEPENDENT EVIDENCE</span>{data.result.market.evidence.map((item, index) => <article key={item.observation_hash}><div><i className="healthy"/><strong>{index === 0 ? "Witness A" : "Witness B"}</strong></div><b>{item.provider_family.replace("synthetic-demo-", "")}</b><small>{item.venue_family} · FRESH · ELIGIBLE</small></article>)}</div>
-        <div className="truth-core"><span>MARKET TRUTH</span><strong>{usd(data.result.market.reference_price)}</strong><div className="confidence-ring">{Math.round((data.result.market.confidence ?? 0) * 100)}%<small>confidence</small></div></div>
+        <div className="evidence-column">
+          <span className="v1-kicker">EVIDENCE PROVENANCE</span>
+          {showEvidence && data.result.market.evidence.length === 0 && <p className="empty-copy">No qualifying evidence is currently available.</p>}
+          {showEvidence && data.result.market.evidence.map((item) => <article key={item.observation_hash}>
+            <div><i className={item.fresh && item.eligible ? "healthy" : ""}/><strong>{item.provider}</strong></div>
+            <b>{item.source_mode?.replaceAll("_", " ") ?? item.provider_family}</b>
+            <small>{item.venue_family} · {item.fresh ? "FRESH" : "STALE"} · {item.eligible ? "ELIGIBLE" : "NOT ELIGIBLE"}</small>
+            <small>{usd(item.observed_price)} · {evidenceAge(item.event_time)}</small>
+          </article>)}
+          {!showEvidence && <p className="empty-copy">Evidence details hidden. Use “Inspect evidence” to reveal provider, price, timestamp and mode.</p>}
+        </div>
+        <div className="truth-core"><span>MARKET TRUTH</span><strong>{usd(data.result.market.reference_price)}</strong><div className="confidence-ring">{Math.round((data.result.market.confidence ?? 0) * 100)}%<small>confidence</small></div><small>{data.result.market.reference_status?.replaceAll("_", " ")}</small></div>
         <div className={`venue-column ${actionClass}`}><span className="v1-kicker">VENUE MARK</span><strong>{usd(data.result.market.venue_mark)}</strong><b>{data.result.market.divergence_bps == null ? "—" : `${data.result.market.divergence_bps.toFixed(1)} bps`}</b><small>DIVERGENCE</small></div>
         <div className="flow-arrow">→</div>
         <div className={`decision-monolith ${actionClass}`}><span>ORDER DECISION</span><strong>{data.result.action.replaceAll("_", " ")}</strong><p>{data.story.headline}</p><dl><div><dt>Requested</dt><dd>{data.result.requested_leverage}× · {usd(data.result.requested_notional_usd)}</dd></div><div><dt>Permitted</dt><dd>{data.result.permitted_leverage}× · {usd(data.result.permitted_notional_usd)}</dd></div><div><dt>Reduce / close</dt><dd>{data.result.reduce_only_allowed ? "AVAILABLE" : "UNAVAILABLE"}</dd></div></dl></div>
@@ -195,10 +365,43 @@ export function WarRoom() {
 }
 
 export function ProviderMesh() {
-  const [data, setData] = useState<ProviderPayload | null>(null); const [error, setError] = useState<string | null>(null);
-  useEffect(() => { void fetch(`${API_BASE}/v1/providers`, { cache: "no-store" }).then(async (response) => { if (!response.ok) throw new Error("Provider registry unavailable"); setData(await response.json() as ProviderPayload); }).catch((caught) => setError(caught instanceof Error ? caught.message : "Provider registry unavailable")); }, []);
-  const groups = useMemo(() => data ? { core: data.providers.filter((item) => ["alpaca", "hyperliquid"].includes(item.id)), context: data.providers.filter((item) => ["marketaux", "sec-edgar", "nasdaq-symbols"].includes(item.id)), optional: data.providers.filter((item) => !["alpaca", "hyperliquid", "marketaux", "sec-edgar", "nasdaq-symbols"].includes(item.id)) } : null, [data]);
-  return <div className="v1-page"><header className="v1-page-head"><div><span className="v1-eyebrow">CAPABILITY-BASED · PROVIDER-AGNOSTIC</span><h1>Free-First Provider Mesh</h1><p>Providers declare what they are allowed to influence. Vendor names are adapters, not architecture.</p></div><span className="free-chip">₹0-FIRST</span></header>{error && <div className="v1-error">{error}</div>}{!groups ? <div className="war-empty">Loading provider registry…</div> : <>{(["core", "context", "optional"] as const).map((group) => <section className="provider-section" key={group}><div className="section-title"><span>{group === "core" ? "01" : group === "context" ? "02" : "03"}</span><div><h2>{group === "core" ? "Live safety core" : group === "context" ? "Intelligence context" : "Optional / fallback"}</h2><p>{group === "core" ? "Data used to observe the underlying market and the trading venue." : group === "context" ? "Useful information that never manufactures Market Truth." : "Helpful when configured, never required for the flagship demo."}</p></div></div><div className="provider-grid">{groups[group].map((provider) => <article key={provider.id}><div className="provider-top"><strong>{provider.name}</strong><span className={provider.configured || provider.status === "READY" ? "on" : "off"}>{provider.status}</span></div><h3>{provider.capability.replaceAll("_", " ")}</h3><dl><div><dt>Cost mode</dt><dd>{provider.cost_mode.replaceAll("_", " ")}</dd></div><div><dt>Source class</dt><dd>{provider.source_class.replaceAll("_", " ")}</dd></div><div><dt>Market Truth</dt><dd>{provider.market_truth_authority.replaceAll("_", " ")}</dd></div><div><dt>Risk eligible</dt><dd>{provider.risk_eligible ? "YES" : "NO"}</dd></div></dl><p>{provider.note}</p></article>)}</div></section>)}</>}
+  const [data, setData] = useState<ProviderPayload | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const load = () => void fetch(`${API_BASE}/v1/providers`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Provider registry unavailable");
+        setData(await response.json() as ProviderPayload);
+      })
+      .catch((caught) => setError(caught instanceof Error ? caught.message : "Provider registry unavailable"));
+    load();
+    const timer = window.setInterval(load, 15000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const groups = useMemo(() => data ? {
+    core: data.providers.filter((item) => ["alpaca", "hyperliquid"].includes(item.id)),
+    context: data.providers.filter((item) => ["marketaux", "sec-edgar", "nasdaq-symbols"].includes(item.id)),
+    optional: data.providers.filter((item) => !["alpaca", "hyperliquid", "marketaux", "sec-edgar", "nasdaq-symbols"].includes(item.id)),
+  } : null, [data]);
+  return <div className="v1-page">
+    <header className="v1-page-head"><div><span className="v1-eyebrow">CAPABILITY ≠ CONFIGURATION ≠ HEALTH</span><h1>Free-First Provider Mesh</h1><p>Each adapter exposes what it can do, whether it is configured, and what the runtime has actually observed.</p></div><span className="free-chip">₹0-FIRST</span></header>
+    {error && <div className="v1-error">{error}</div>}
+    {!groups ? <div className="war-empty">Loading provider registry…</div> : <>{(["core", "context", "optional"] as const).map((group) => <section className="provider-section" key={group}>
+      <div className="section-title"><span>{group === "core" ? "01" : group === "context" ? "02" : "03"}</span><div><h2>{group === "core" ? "Live safety core" : group === "context" ? "Intelligence context" : "Optional / fallback"}</h2><p>{group === "core" ? "Runtime evidence used to observe the underlying market or trading venue." : group === "context" ? "Useful information that cannot manufacture Market Truth." : "Optional integrations, kept outside the mandatory safety path."}</p></div></div>
+      <div className="provider-grid">{groups[group].map((provider) => <article key={provider.id}>
+        <div className="provider-top"><strong>{provider.name}</strong><span className={provider.health === "HEALTHY" ? "on" : ""}>{provider.status}</span></div>
+        <h3>{provider.capability.replaceAll("_", " ")}</h3>
+        <dl>
+          <div><dt>Supported</dt><dd>{provider.supported === false ? "NO" : "YES"}</dd></div>
+          <div><dt>Configured</dt><dd>{provider.configured ? "YES" : "NO"}</dd></div>
+          <div><dt>Observed health</dt><dd>{(provider.health ?? "UNKNOWN").replaceAll("_", " ")}</dd></div>
+          <div><dt>Last event</dt><dd>{provider.runtime?.last_event_time ? new Date(String(provider.runtime.last_event_time)).toLocaleTimeString() : "NOT OBSERVED"}</dd></div>
+          <div><dt>Market Truth</dt><dd>{provider.market_truth_authority.replaceAll("_", " ")}</dd></div>
+          <div><dt>Risk eligible</dt><dd>{provider.risk_eligible ? "YES" : "NO"}</dd></div>
+        </dl>
+        <p>{provider.note}</p>
+      </article>)}</div>
+    </section>)}</>}
     {data && <section className="principle-card"><span className="v1-kicker">NON-NEGOTIABLE BOUNDARIES</span>{data.principles.map((item) => <p key={item}>✓ {item}</p>)}</section>}
   </div>;
 }
