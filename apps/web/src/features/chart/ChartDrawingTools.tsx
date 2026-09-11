@@ -25,7 +25,7 @@ const point = (event: ReactPointerEvent<SVGSVGElement>): Point => {
 };
 
 function DrawingShape({ drawing }: { drawing: Drawing }) {
-  const common = { stroke: "#8faaff", strokeWidth: 1.5, vectorEffect: "non-scaling-stroke" as const, fill: "none" };
+  const common = { stroke: "#b8c9ff", strokeWidth: 2.25, vectorEffect: "non-scaling-stroke" as const, fill: "none", strokeLinecap: "round" as const };
   if (drawing.tool === "horizontal") return <line {...common} x1={0} y1={drawing.start.y} x2={1000} y2={drawing.start.y}/>;
   if (drawing.tool === "vertical") return <line {...common} x1={drawing.start.x} y1={0} x2={drawing.start.x} y2={1000}/>;
   if (drawing.tool === "rectangle") return <rect {...common} x={Math.min(drawing.start.x, drawing.end.x)} y={Math.min(drawing.start.y, drawing.end.y)} width={Math.abs(drawing.end.x - drawing.start.x)} height={Math.abs(drawing.end.y - drawing.start.y)} fill="#3861fb12"/>;
