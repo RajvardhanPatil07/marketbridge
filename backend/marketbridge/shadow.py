@@ -917,12 +917,6 @@ class LivePipeline:
                 "retry_count": 0,
                 "consecutive_failures": 0,
             },
-            "databento": {
-                "status": "DISABLED",
-                "kind": "DIRECT_MARKET",
-                "detail": "Set DATABENTO_API_KEY for EQUS.MINI MBP-1",
-                "qualification_capable": False,
-            },
             "twelve-data": {
                 "status": "DISABLED",
                 "kind": "DIRECT_MARKET",
@@ -947,7 +941,6 @@ class LivePipeline:
         self._alpaca_trade_order: deque[tuple[str, str]] = deque(maxlen=10_000)
         self._started = False
         self._state_lock = Lock()
-        self._databento_symbols: dict[int, str] = {}
         self._hyperliquid_context: dict[str, dict] = {}
 
     @staticmethod
@@ -977,7 +970,6 @@ class LivePipeline:
         if feed not in ALPACA_SUPPORTED_FEEDS:
             alpaca_errors.append("ALPACA_FEED_UNSUPPORTED")
         credentials_configured = api_key and secret_key
-        databento_configured = bool(os.environ.get("DATABENTO_API_KEY", "").strip())
         twelve_data_configured = bool(os.environ.get("TWELVE_DATA_API_KEY", "").strip())
         qualification_capable = credentials_configured and feed in ALPACA_MULTI_VENUE_FEEDS
         if credentials_configured and feed == "iex":
@@ -1017,7 +1009,7 @@ class LivePipeline:
         errors = [*errors, *alpaca_errors, *hyperliquid_errors]
 
         execution_evidence_configured = qualification_capable or (
-            credentials_configured and (databento_configured or twelve_data_configured)
+            credentials_configured and twelve_data_configured
         )
         return {
             "strict_live_data": _env_enabled("MARKETBRIDGE_REQUIRE_LIVE_DATA"),
@@ -1028,13 +1020,6 @@ class LivePipeline:
                 "qualification_capable": qualification_capable,
                 "configured_multi_venue": qualification_capable,
                 "errors": alpaca_errors,
-            },
-            "databento": {
-                "credentials_configured": databento_configured,
-                "dataset": "EQUS.MINI",
-                "schema": "mbp-1",
-                "qualification_capable": databento_configured,
-                "errors": [],
             },
             "twelve_data": {
                 "credentials_configured": twelve_data_configured,
@@ -1089,14 +1074,6 @@ class LivePipeline:
                 "consecutive_failures": 0,
             }
             self._threads.append(Thread(target=self._alpaca_loop, name="marketbridge-alpaca", daemon=True))
-        if configuration["databento"]["credentials_configured"]:
-            self._provider_status["databento"] = {
-                "status": "CONNECTING",
-                "kind": "DIRECT_MARKET",
-                "detail": "EQUS.MINI MBP-1",
-                "qualification_capable": True,
-            }
-            self._threads.append(Thread(target=self._databento_loop, name="marketbridge-databento", daemon=True))
         if configuration["twelve_data"]["credentials_configured"]:
             self._provider_status["twelve-data"] = {
                 "status": "CONNECTING",
@@ -1286,103 +1263,6 @@ class LivePipeline:
                 )
                 self._stop.wait(backoff)
                 backoff = min(15, backoff * 2)
-
-    def _databento_loop(self) -> None:
-        """Consume Databento's aggregated EQUS.MINI BBO as one independent witness."""
-        import databento as db
-
-        client = db.Live(key=os.environ["DATABENTO_API_KEY"], reconnect_policy="reconnect")
-
-        def on_exception(exc: Exception) -> None:
-            self._set_provider(
-                "databento",
-                status="RECONNECTING",
-                detail=str(exc)[:160],
-                last_error_time=_iso(datetime.now(timezone.utc)),
-            )
-
-        def on_record(record) -> None:
-            if isinstance(record, db.SymbolMappingMsg):
-                candidates = (record.stype_in_symbol, record.stype_out_symbol)
-                symbol = next(
-                    (
-                        value.decode() if isinstance(value, bytes) else str(value)
-                        for value in candidates
-                        if (value.decode() if isinstance(value, bytes) else str(value)) in TRACKED_SYMBOLS
-                    ),
-                    None,
-                )
-                if symbol:
-                    self._databento_symbols[int(record.instrument_id)] = symbol
-                return
-            if not isinstance(record, db.MBP1Msg):
-                return
-            symbol = self._databento_symbols.get(int(record.instrument_id))
-            if symbol is None:
-                return
-            received_at = datetime.now(timezone.utc)
-            event_time = datetime.fromtimestamp(int(record.ts_event) / 1_000_000_000, timezone.utc)
-            observation = self._normalized_databento_bbo(
-                symbol,
-                float(record.pretty_bid_px_00),
-                float(record.pretty_ask_px_00),
-                event_time,
-                received_at,
-            )
-            if observation is None:
-                return
-            decision = self.oracle.ingest(observation)
-            values = {
-                "status": "AVAILABLE",
-                "detail": "EQUS.MINI aggregated MBP-1",
-                "last_event_time": _iso(event_time),
-                "last_message_time": _iso(received_at),
-            }
-            if decision["status"] == "QUALIFIED":
-                values["last_qualified_evidence_time"] = _iso(received_at)
-            self._set_provider("databento", **values)
-
-        try:
-            client.add_callback(on_record, on_exception)
-            client.subscribe(
-                dataset="EQUS.MINI",
-                schema="mbp-1",
-                symbols=list(TRACKED_SYMBOLS),
-                stype_in="raw_symbol",
-            )
-            client.start()
-            self._stop.wait()
-        except Exception as exc:
-            on_exception(exc)
-        finally:
-            client.stop()
-
-    @staticmethod
-    def _normalized_databento_bbo(
-        symbol: str,
-        bid: float,
-        ask: float,
-        event_time: datetime,
-        received_at: datetime,
-    ) -> NormalizedObservation | None:
-        if symbol not in TRACKED_SYMBOLS:
-            return None
-        if not all(math.isfinite(value) and value > 0 for value in (bid, ask)) or ask < bid:
-            return None
-        if event_time > received_at + timedelta(seconds=5) or received_at - event_time > timedelta(seconds=30):
-            return None
-        return NormalizedObservation(
-            symbol=symbol,
-            price=(bid + ask) / 2,
-            event_time=event_time,
-            received_at=received_at,
-            source_id="databento-equs-mini-mbp1",
-            source_family="databento-equs-mini",
-            venue="EQUS.MINI",
-            eligible=True,
-            provider_family="databento",
-            venue_family="databento-equs-mini",
-        )
 
     def _twelve_data_loop(self) -> None:
         """Consume Twelve Data price ticks as one independent provider witness."""
