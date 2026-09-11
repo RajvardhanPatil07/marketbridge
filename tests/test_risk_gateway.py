@@ -17,7 +17,7 @@ NOW = datetime(2026, 9, 8, 15, 0, tzinfo=timezone.utc)  # 11:00 New York, regula
 
 
 def request(
-    *, request_id="ord_policy_1", intent="OPEN", scenario="NORMAL", mark=184.55,
+    *, request_id="ord_policy_1", intent="OPEN", scenario="NORMAL", mark=184.55, reference=184.52,
     event_time=NOW, equity=2000, margin=10000, exposure=0, liquidation=None, leverage=10,
     notional=10000, session="REGULAR",
 ):
@@ -34,7 +34,7 @@ def request(
         "symbol": "NVDA",
         "intent": {"kind": intent, "side": "BUY", "notional_usd": notional, "requested_leverage": leverage},
         "account": account,
-        "market": {"mark_price": mark, "event_time": event_time.isoformat(), "session": session},
+        "market": {"mark_price": mark, "oracle_price": reference, "event_time": event_time.isoformat(), "session": session},
         "demo_scenario": scenario,
     })
 
