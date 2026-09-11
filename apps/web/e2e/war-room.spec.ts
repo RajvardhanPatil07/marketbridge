@@ -7,6 +7,10 @@ test("War Room recomputes editable attack inputs, preserves exits and replays pr
   await page.screenshot({ path: "../../artifacts/ui-qa/proof-first-demo.png", fullPage: true });
   await expect(page.getByText("PARAMETERIZED ADVERSARIAL DEMO", { exact: false })).toBeVisible();
 
+  const reset = page.getByRole("button", { name: /Reset incident/i });
+  await reset.click();
+  await expect(reset).toBeEnabled();
+  await page.getByLabel("Evidence mode").selectOption("SYNTHETIC");
   await page.getByLabel("Order notional").fill("12000");
   await page.getByLabel("Attack (bps)").fill("600");
 
@@ -18,7 +22,7 @@ test("War Room recomputes editable attack inputs, preserves exits and replays pr
 
   await page.getByRole("button", { name: /Poison venue mark/i }).click();
   await expect(decision.getByText("BLOCK NEW RISK", { exact: true })).toBeVisible();
-  await expect(page.getByText("600 bps", { exact: true })).toBeVisible();
+  await expect(page.locator(".war-provenance-strip").getByText("600 bps", { exact: true })).toBeVisible();
   await page.screenshot({ path: "../../artifacts/ui-qa/war-room-block.png", fullPage: true });
   await expect(decision.getByText("AVAILABLE", { exact: true })).toBeVisible();
 
