@@ -150,6 +150,8 @@ POST /v1/proof/portfolio
 POST /v1/demo/war-room
 POST /v1/demo/war-room/replay
 POST /v1/demo/war-room/reset
+POST /v1/demo/live-baseline
+POST /v1/order/safe-alternative
 ```
 
 The mature safety APIs remain intact:
@@ -178,7 +180,9 @@ http://127.0.0.1:8000/
 http://127.0.0.1:8000/demo/
 ```
 
-The public synthetic War Room needs no market-data key. To enable real free-first market display, add Alpaca credentials to the backend `.env`. Provider credentials must never be exposed through `NEXT_PUBLIC_*` variables.
+The War Room needs no market-data key because AUTO can fall back to its explicit synthetic fixture. To enable real free-first market display, add Alpaca credentials to the backend `.env`. Provider credentials must never be exposed through `NEXT_PUBLIC_*` variables.
+
+The canonical backend entrypoint is `marketbridge.app:app`. Railway/Docker serves both API and the exported frontend from one process. The Vercel configuration is frontend-only; for a split Vercel frontend, set `NEXT_PUBLIC_API_BASE` to the deployed backend URL at build time.
 
 ## Verify
 
