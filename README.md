@@ -60,8 +60,8 @@ Valid `REDUCE` and `CLOSE` requests remain available when evidence degrades. `OP
 The `/demo/` judge flow starts with evidence before the controlled War Room:
 
 1. **Historical reconstruction** — published July 2026 SK Hynix / TradeXYZ observations pass through the same deterministic consequence function used by the live risk gate. It is explicitly counterfactual and consumes no future outcome.
-2. **Operating benchmark** — a labeled 450-case safety suite reports TP/TN/FP/FN, false-positive and false-negative rates, precision/recall, and measured core/gateway p50/p95/p99 latency.
-3. **Portfolio Risk Firewall** — even qualified Market Truth can be capped when the proposed order creates excessive single-name, sector, correlated-risk-bucket, account, or session risk.
+2. **Seeded policy regression** — thousands of varied, reproducible market/account/order states exercise the deterministic safety policy. The report shows action distribution, safety-invariant violations, scenario coverage, and measured core/gateway p50/p95/p99 latency. It deliberately does **not** claim classifier precision/recall from self-labelled fixtures.
+3. **Portfolio Risk Firewall** — editable account, exposure, symbol, notional and leverage inputs are recomputed through the same RiskGateway; qualified Market Truth can still be capped by concentration, account, or session risk.
 4. **Safe Alternative** — capped requests return the maximum permitted leverage and notional instead of a binary no.
 5. **Host integration proof** — a reference Mochatrade pre-trade adapter shows how a host binds the short-lived Safety Passport to the exact order.
 
@@ -69,11 +69,12 @@ Proof endpoints:
 
 ```text
 GET /v1/proof/historical
-GET /v1/proof/benchmark
-GET /v1/proof/portfolio
+GET  /v1/proof/benchmark?cases=2000&seed=20260911
+GET  /v1/proof/portfolio
+POST /v1/proof/portfolio
 ```
 
-The historical view is `HISTORICAL_RECONSTRUCTION`, not a licensed consolidated feed. The operating suite is `SYNTHETIC_LABELED_BENCHMARK`, not a historical-market backtest. Latency values are measured when the endpoint runs rather than hard-coded into this README.
+The historical view is `HISTORICAL_RECONSTRUCTION`, not a licensed consolidated feed. The operating suite is `SYNTHETIC_POLICY_REGRESSION`, not a classifier benchmark or historical-market backtest. Its seed is reported so the varied state space is reproducible, and latency values are measured when the endpoint runs rather than hard-coded into this README.
 
 See [proof methodology](./docs/PROOF.md), [threat model](./docs/THREAT_MODEL.md), [Mochatrade integration](./docs/MOCHATRADE_INTEGRATION.md), and the [90-second demo recording script](./docs/DEMO_VIDEO_SCRIPT.md).
 
@@ -82,14 +83,15 @@ See [proof methodology](./docs/PROOF.md), [threat model](./docs/THREAT_MODEL.md)
 
 Open `/demo/` and run the judge flow:
 
-1. **Normal market** — independent synthetic witnesses agree and a 10× NVDA open is allowed.
-2. **Poison venue mark** — the venue jumps roughly 300 bps away from Market Truth; new risk is blocked.
-3. **Prove exit stays open** — the same degraded market still allows a valid close.
-4. **Safety Passport** — inspect the decision fingerprint, policy, evidence count and expiry.
-5. **Replay without gate** — compare the actual safety decision with a clearly-labelled no-gate counterfactual and show `prevented_additional_exposure_usd`.
-6. **Recover safely** — repeated stable evidence moves through `RECOVERY_PENDING` instead of enabling leverage after one good tick.
+1. **Choose the inputs** — change symbol, order notional, leverage, account equity, existing exposure, attack magnitude and evidence mode.
+2. **Normal market** — AUTO uses a genuinely qualified live reference when the configured independent-provider quorum exists; otherwise it uses a clearly labelled synthetic fixture seeded from the current display price.
+3. **Poison venue mark** — apply the judge-selected basis-point attack and recompute the order decision.
+4. **Prove exit stays open** — the same degraded market still allows a valid close.
+5. **Inspect provenance** — evidence cards show provider identity, observed price, event age, eligibility and whether the evidence is live or a synthetic fixture.
+6. **Safety Passport + replay** — inspect the decision fingerprint and compare the actual safety decision with a clearly-labelled no-gate counterfactual.
+7. **Recover safely** — repeated stable evidence moves through `RECOVERY_PENDING` instead of enabling leverage after one good tick.
 
-All attack values are labelled `SYNTHETIC_DEMO`. No trade is submitted and no fake fill/savings claim is made.
+The War Room reports `LIVE_DERIVED_DEMO` when a qualified live quorum is actually available and `SYNTHETIC_DEMO` otherwise. Synthetic witnesses use generic fixture names and never impersonate Alpaca, Twelve Data, or another real provider. No trade is submitted and no fake fill/savings claim is made.
 
 ## Free-first provider mesh
 
@@ -109,7 +111,7 @@ MarketBridge v1 is provider-agnostic and does not require a paid institutional f
 
 **Databento is not part of the v1 free-first product/deployment path.** The paid dependency, environment requirement and import workflow are removed from this branch.
 
-Every provider exposed by `/v1/providers` declares its capability, cost mode, source class, Market Truth authority, configuration status and risk eligibility.
+Every provider exposed by `/v1/providers` separates **supported capability**, **configuration**, and **observed runtime health**. A public adapter that has not been probed is reported as `SUPPORTED / NOT_PROBED`, not falsely labelled `READY`.
 
 ## Three planes, one boundary
 
@@ -144,6 +146,7 @@ GET  /v1/intelligence/{symbol}
 GET  /v1/proof/historical
 GET  /v1/proof/benchmark
 GET  /v1/proof/portfolio
+POST /v1/proof/portfolio
 POST /v1/demo/war-room
 POST /v1/demo/war-room/replay
 POST /v1/demo/war-room/reset
