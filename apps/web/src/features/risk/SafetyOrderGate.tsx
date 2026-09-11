@@ -15,6 +15,7 @@ const actionLabel: Record<RiskAction, string> = {
 
 type Scenario = "NORMAL" | "POISONED_MARK" | "RECOVERY";
 type Intent = "OPEN" | "INCREASE" | "REDUCE" | "CLOSE";
+const DEMO_ATTACK_BPS = 350;
 
 function PassportView({ passport, onClose }: { passport: SafetyPassport; onClose: () => void }) {
   const claims = passport.claims;
@@ -53,7 +54,10 @@ export default function SafetyOrderGate({ asset }: { asset: MarketAsset | null }
     setLoading(true); setError(null); setReplay(null);
     const orderNotional = Number(notional);
     const positionNotional = intent === "REDUCE" || intent === "CLOSE" ? Math.max(Number(existingExposure), orderNotional) : Number(existingExposure);
-    const mark = scenario === "POISONED_MARK" ? 190.20 : asset.symbol === "NVDA" ? 184.55 : asset.price ?? 100;
+    const baseline = asset.price ?? asset.previousClose ?? 100;
+    const mark = scenario === "POISONED_MARK"
+      ? baseline * (1 + DEMO_ATTACK_BPS / 10_000)
+      : baseline;
     const body = {
       request_id: `ord_${crypto.randomUUID()}`,
       symbol: asset.symbol,
@@ -63,7 +67,7 @@ export default function SafetyOrderGate({ asset }: { asset: MarketAsset | null }
         position_notional_usd: positionNotional,
         ...(liquidationPrice ? { liquidation_price: Number(liquidationPrice), position_side: "BUY" } : {}),
       },
-      market: { mark_price: mark, event_time: new Date().toISOString(), session: "REGULAR" },
+      market: { mark_price: mark, oracle_price: baseline, event_time: new Date().toISOString(), session: "REGULAR" },
       demo_scenario: scenario,
     };
     try {
