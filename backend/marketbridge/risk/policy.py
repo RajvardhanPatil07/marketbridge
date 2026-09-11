@@ -8,8 +8,9 @@ from decimal import Decimal, ROUND_DOWN
 from .models import IntentKind, RiskCheckRequest
 from .portfolio import assess_portfolio
 
-POLICY_VERSION = "mocha-risk-v1.1.0"
+POLICY_VERSION = "mocha-risk-v1.2.0"
 ACTION_RANK = {"ALLOW": 0, "CAP_LEVERAGE": 1, "REVIEW": 2, "BLOCK_NEW_RISK": 3}
+VENUE_DIVERGENCE_BLOCK_BPS = Decimal("250")
 
 
 @dataclass(frozen=True)
@@ -80,6 +81,8 @@ def decide(
     session = market_truth["session"]
     configured_cap = Decimal(str(asset_policy["max_leverage"].get(session, 0)))
 
+    # Exit invariant: degraded evidence may stop new risk, but it must not trap a
+    # customer inside an otherwise valid reduce/close request.
     if intent.kind in {IntentKind.REDUCE, IntentKind.CLOSE}:
         return {
             "action": "ALLOW",
@@ -106,6 +109,9 @@ def decide(
         blockers.append("EVIDENCE_NOT_ENTITLED_FOR_COMPUTATION")
     if market_truth.get("provider_count", 0) < asset_policy["min_independent_providers"]:
         blockers.append("MINIMUM_PROVIDER_INDEPENDENCE_NOT_MET")
+    divergence = market_truth.get("divergence_bps")
+    if divergence is not None and Decimal(str(divergence)) >= VENUE_DIVERGENCE_BLOCK_BPS:
+        blockers.append("VENUE_MARK_DIVERGENCE_LIMIT_EXCEEDED")
     if asset_policy["corporate_action_state"] != "CLEAR":
         blockers.append("UNRESOLVED_CORPORATE_ACTION")
     if market_truth.get("asset_state") in {"RESTRICTED", "HALTED", "RECOVERY_PENDING"}:
