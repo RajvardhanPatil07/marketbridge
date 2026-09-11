@@ -1,14 +1,14 @@
-.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
+.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow benchmark-risk live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
 
 setup:
-	uv sync --frozen
+	uv sync
 	npm --prefix apps/web ci
 
 build:
 	npm --prefix apps/web run build
 
 serve:
-	uv run --env-file .env uvicorn marketbridge.api:app --app-dir backend --host 0.0.0.0 --port $${PORT:-8000}
+	uv run --env-file .env uvicorn marketbridge.app:app --app-dir backend --host 0.0.0.0 --port $${PORT:-8000}
 
 demo: build serve
 
@@ -20,10 +20,10 @@ test:
 
 verify:
 	uv run ruff check backend tests scripts
-	uv run pytest -q
 	npm --prefix apps/web run typecheck
 	npm --prefix apps/web run test:unit
 	npm --prefix apps/web run build
+	uv run pytest -q
 
 evaluate:
 	uv run python scripts/evaluate.py
@@ -33,6 +33,9 @@ replay:
 
 benchmark-shadow:
 	uv run python scripts/benchmark_shadow.py
+
+benchmark-risk:
+	uv run python scripts/benchmark_risk_gate.py
 
 live-check:
 	uv run --env-file .env python scripts/check_live_config.py

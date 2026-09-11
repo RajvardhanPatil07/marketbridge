@@ -585,6 +585,14 @@ def operator_decision(
     }
 
 
+# Install the v1 free-first/proof/War Room routes on the canonical API object
+# before the static catch-all. This makes both marketbridge.api:app and
+# marketbridge.app:app safe local entrypoints; install_v1_free is idempotent.
+from .v1free import install_v1_free  # noqa: E402
+
+install_v1_free(app, pipeline, risk_gateway)
+
+
 if (WEB / "_next").is_dir():
     app.mount("/_next", StaticFiles(directory=WEB / "_next"), name="next-assets")
 

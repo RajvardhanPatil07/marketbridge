@@ -15,7 +15,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `uv run uvicorn marketbridge.api:app --app-dir backend --host 127.0.0.1 --port ${port}`,
+    command: `uv run uvicorn marketbridge.app:app --app-dir backend --host 127.0.0.1 --port ${port}`,
     cwd: "../..",
     env: {
       ...process.env,

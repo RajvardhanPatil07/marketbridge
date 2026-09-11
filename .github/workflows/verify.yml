@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      UV_FROZEN: "true"
       NEXT_TELEMETRY_DISABLED: "1"
+      MARKETBRIDGE_DISABLE_RESEARCH_FEED: "1"
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -31,11 +31,11 @@ jobs:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v9
+        uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: "0.12.3"
+          version: "0.12.9"
           enable-cache: true
-          cache-dependency-glob: uv.lock
+          cache-dependency-glob: pyproject.toml
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -44,8 +44,8 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Install locked Python dependencies
-        run: uv sync --frozen
+      - name: Install Python dependencies
+        run: uv sync
 
       - name: Install locked frontend dependencies
         run: npm --prefix apps/web ci
@@ -57,7 +57,10 @@ jobs:
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
-      - name: Verify live market-data flow end to end
+      - name: Prepare retained evidence directories
+        run: mkdir -p artifacts/ui-qa
+
+      - name: Verify market-data and synthetic demo flow end to end
         run: make e2e
 
       - name: Export synthetic functional evaluation
@@ -66,10 +69,15 @@ jobs:
       - name: Export synthetic replay
         run: make replay
 
+      - name: Measure risk-gate operating characteristics
+        run: make benchmark-risk > artifacts/risk-benchmark.json
+
       - name: Retain synthetic evaluation artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: synthetic-demo-evidence
-          path: artifacts/*.json
+          name: judge-evidence
+          path: |
+            artifacts/*.json
+            artifacts/ui-qa/*.png
           if-no-files-found: error
           retention-days: 7

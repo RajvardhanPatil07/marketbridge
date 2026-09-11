@@ -4,10 +4,15 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 import hashlib
 import json
+import os
 from threading import Lock
+from zoneinfo import ZoneInfo
+
+IST = ZoneInfo("Asia/Kolkata")
 
 
 def _json_default(value):
@@ -22,6 +27,41 @@ def canonical_json(value: object) -> bytes:
 
 def canonical_hash(value: object) -> str:
     return hashlib.sha256(canonical_json(value)).hexdigest()
+
+
+def _presentation_claims(claims: dict) -> dict:
+    """Attach immutable display context without changing USD policy semantics."""
+    enriched = deepcopy(claims)
+    identity = enriched.get("identity", {})
+    order = enriched.get("order", {})
+    timestamp = identity.get("timestamp")
+    timestamp_ist = None
+    if timestamp:
+        try:
+            timestamp_ist = datetime.fromisoformat(timestamp.replace("Z", "+00:00")).astimezone(IST).isoformat()
+        except (TypeError, ValueError):
+            timestamp_ist = None
+
+    raw_fx = os.getenv("USDINR", "").strip()
+    try:
+        usd_inr = Decimal(raw_fx) if raw_fx else None
+    except Exception:
+        usd_inr = None
+
+    def convert(value):
+        if value is None or usd_inr is None:
+            return None
+        return float((Decimal(str(value)) * usd_inr).quantize(Decimal("0.01")))
+
+    enriched["presentation"] = {
+        "timezone": "Asia/Kolkata",
+        "timestamp_ist": timestamp_ist,
+        "usd_inr": float(usd_inr) if usd_inr else None,
+        "fx_source": "USDINR environment configuration" if usd_inr else "UNCONFIGURED",
+        "requested_notional_inr": convert(order.get("requested_notional_usd")),
+        "permitted_notional_inr": convert(order.get("permitted_notional_usd")),
+    }
+    return enriched
 
 
 @dataclass
@@ -43,6 +83,7 @@ class PassportStore:
         self._sequences: dict[str, int] = {}
 
     def create(self, claims: dict, request: dict, market_truth: dict, request_hash: str) -> dict:
+        claims = _presentation_claims(claims)
         symbol = claims["identity"]["symbol"]
         with self._lock:
             sequence = self._sequences.get(symbol, 0) + 1
