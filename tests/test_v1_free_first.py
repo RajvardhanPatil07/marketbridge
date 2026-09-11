@@ -1,10 +1,13 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from marketbridge.providers import provider_registry
+from marketbridge.risk import RiskGateway
 from marketbridge.v1free import WarRoomRequest, _war_room_risk_request
 
 
 NOW = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_free_first_registry_separates_capability_from_health(monkeypatch):
@@ -84,3 +87,23 @@ def test_auto_mode_uses_qualified_live_reference_when_quorum_exists():
     assert request.market.mark_price == 260
     assert provenance["data_mode"] == "LIVE_DERIVED_DEMO"
     assert provenance["baseline_source"] == "LIVE_QUALIFIED_REFERENCE"
+
+
+def test_synthetic_witnesses_do_not_impersonate_real_providers():
+    payload = WarRoomRequest(
+        scenario="NORMAL",
+        mode="SYNTHETIC",
+        symbol="NVDA",
+        baseline_price=200,
+    )
+    request, _ = _war_room_risk_request(payload, NOW, {"decisions": []})
+    result = RiskGateway(ROOT).check(request, {"decisions": []}, now=NOW)
+    evidence = result["market"]["evidence"]
+    assert [item["provider"] for item in evidence] == [
+        "Synthetic Witness A",
+        "Synthetic Witness B",
+    ]
+    assert all(item["source_mode"] == "SYNTHETIC_FIXTURE" for item in evidence)
+    assert all(item["observed_price"] is not None for item in evidence)
+    assert all("alpaca" not in item["provider"].lower() for item in evidence)
+    assert all("twelve" not in item["provider"].lower() for item in evidence)
