@@ -16,6 +16,7 @@ const actionLabel: Record<RiskAction, string> = {
 type Scenario = "NORMAL" | "POISONED_MARK" | "RECOVERY";
 type Intent = "OPEN" | "INCREASE" | "REDUCE" | "CLOSE";
 const DEMO_ATTACK_BPS = 350;
+const roundPrice = (value: number) => Math.round(value * 1_000_000) / 1_000_000;
 
 function PassportView({ passport, onClose }: { passport: SafetyPassport; onClose: () => void }) {
   const claims = passport.claims;
@@ -54,10 +55,12 @@ export default function SafetyOrderGate({ asset }: { asset: MarketAsset | null }
     setLoading(true); setError(null); setReplay(null);
     const orderNotional = Number(notional);
     const positionNotional = intent === "REDUCE" || intent === "CLOSE" ? Math.max(Number(existingExposure), orderNotional) : Number(existingExposure);
-    const baseline = asset.price ?? asset.previousClose ?? 100;
-    const mark = scenario === "POISONED_MARK"
-      ? baseline * (1 + DEMO_ATTACK_BPS / 10_000)
-      : baseline;
+    const baseline = roundPrice(asset.price ?? asset.previousClose ?? 100);
+    const mark = roundPrice(
+      scenario === "POISONED_MARK"
+        ? baseline * (1 + DEMO_ATTACK_BPS / 10_000)
+        : baseline
+    );
     const body = {
       request_id: `ord_${crypto.randomUUID()}`,
       symbol: asset.symbol,
