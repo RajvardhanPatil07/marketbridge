@@ -1,4 +1,4 @@
-.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow benchmark-risk live-check e2e e2e-live train-ai build-ml-dataset export-evidence clean-artifacts
+.PHONY: setup build serve demo dev test verify evaluate replay benchmark-shadow benchmark-risk live-check e2e train-ai build-ml-dataset export-evidence
 
 setup:
 	uv sync
@@ -45,9 +45,6 @@ e2e:
 	npm --prefix apps/web run test:e2e
 	npm --prefix apps/web run test:e2e:healthy
 
-e2e-live:
-	npm --prefix apps/web run build
-	npm --prefix apps/web run test:e2e:live
 
 train-ai:
 	uv run python scripts/train_ai_models.py

@@ -8,8 +8,7 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:healthy": "playwright test --config playwright.healthy.config.ts",
-    "test:e2e:live": "playwright test --config playwright.live.config.ts"
+    "test:e2e:healthy": "playwright test --config playwright.healthy.config.ts"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.6",

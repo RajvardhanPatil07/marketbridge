@@ -97,7 +97,7 @@ def test_live_configuration_accepts_sip_as_multi_venue(monkeypatch, tmp_path):
     assert configuration["warnings"] == []
 
 
-def test_live_configuration_accepts_alpaca_plus_twelve_data(monkeypatch, tmp_path):
+def test_twelve_data_requires_explicit_risk_eligibility_opt_in(monkeypatch, tmp_path):
     monkeypatch.setenv("ALPACA_API_KEY", "configured")
     monkeypatch.setenv("ALPACA_SECRET_KEY", "configured")
     monkeypatch.setenv("ALPACA_FEED", "iex")
@@ -105,17 +105,25 @@ def test_live_configuration_accepts_alpaca_plus_twelve_data(monkeypatch, tmp_pat
 
     configuration = LivePipeline(tmp_path / "audit.jsonl").configuration()
 
-    assert configuration["execution_evidence_configured"] is True
-    assert configuration["twelve_data"] == {
+    assert configuration["execution_evidence_configured"] is False
+    assert configuration["twelve_data"]["risk_eligible_opt_in"] is False
+    assert configuration["twelve_data"]["qualification_capable"] is False
+
+    monkeypatch.setenv("TWELVE_DATA_RISK_ELIGIBLE", "1")
+    opted_in = LivePipeline(tmp_path / "eligible.jsonl").configuration()
+    assert opted_in["execution_evidence_configured"] is True
+    assert opted_in["twelve_data"] == {
         "credentials_configured": True,
         "endpoint": "quotes/price",
         "tracked_symbols": 8,
+        "risk_eligible_opt_in": True,
         "qualification_capable": True,
         "errors": [],
     }
 
 
-def test_twelve_data_subscription_and_price_form_one_provider_witness(tmp_path):
+def test_twelve_data_subscription_and_price_form_one_provider_witness(monkeypatch, tmp_path):
+    monkeypatch.setenv("TWELVE_DATA_RISK_ELIGIBLE", "1")
     pipeline = LivePipeline(tmp_path / "audit.jsonl")
     session: dict[str, object] = {"subscribed_symbols": set()}
     subscription = {

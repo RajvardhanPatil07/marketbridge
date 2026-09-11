@@ -4,7 +4,7 @@ import { Activity, Radio, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import styles from "./kalshi-pulse.module.css";
 
-const API_BASE = process.env.NEXT_PUBLIC_MARKETBRIDGE_API_BASE?.replace(/\/$/, "") ?? "";
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
 const REFRESH_MS = 120_000;
 
 type PulseMarket = {

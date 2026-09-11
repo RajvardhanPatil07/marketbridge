@@ -57,7 +57,7 @@ The public hackathon build must not require a paid market-data subscription.
 - Marketaux: cached financial-news context.
 - SEC EDGAR: primary-source company filings/facts.
 - Nasdaq Symbol Directory: security-master/reference metadata.
-- Twelve Data: optional/internal cross-check only unless actual account rights permit the intended use.
+- Twelve Data: optional/internal cross-check by default; it becomes risk-eligible only after explicit `TWELVE_DATA_RISK_ELIGIBLE=1` opt-in following account-rights review.
 - Yahoo/yfinance: legacy research-only fallback, disabled by default.
 - FRED/CoinGecko: optional context/display integrations.
 

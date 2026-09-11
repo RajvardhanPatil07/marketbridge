@@ -4,7 +4,7 @@ Prepared for the 2026 hackathon build. Provider plans and usage rights can chang
 
 ## Required for the public demo
 
-**Nothing.** `/demo/` uses explicit deterministic `SYNTHETIC_DEMO` fixtures and the real MarketBridge risk policy. This makes the demo reliable and reproducible.
+**Nothing.** `/demo/` runs without secrets: `AUTO` uses qualified live evidence when a real independent-provider quorum exists and otherwise falls back to an explicit deterministic `SYNTHETIC_DEMO` fixture using the same risk policy. `LIVE` mode fails visibly when that quorum is unavailable.
 
 ## Recommended free live configuration
 
@@ -62,9 +62,11 @@ Keep only as an optional/internal cross-check. A free key or trial WebSocket doe
 
 ```env
 TWELVE_DATA_API_KEY=...
+# Enable only after verifying your account's non-display/risk-computation rights:
+# TWELVE_DATA_RISK_ELIGIBLE=1
 ```
 
-MarketBridge v1 does not require it to run the flagship demo.
+Without the explicit eligibility opt-in, Twelve Data remains a context/internal cross-check and cannot qualify Market Truth. MarketBridge v1 does not require it to run the flagship demo.
 
 ### FRED
 

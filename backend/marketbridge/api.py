@@ -585,12 +585,14 @@ def operator_decision(
     }
 
 
-# Install the v1 free-first/proof/War Room routes on the canonical API object
-# before the static catch-all. This makes both marketbridge.api:app and
-# marketbridge.app:app safe local entrypoints; install_v1_free is idempotent.
+# Install every API extension before the static catch-all. FastAPI/Starlette
+# resolves routes in registration order, so registering API routes after
+# /{asset_path:path} would make them unreachable.
+from .judge import install_judge_routes  # noqa: E402
 from .v1free import install_v1_free  # noqa: E402
 
 install_v1_free(app, pipeline, risk_gateway)
+install_judge_routes(app, pipeline, risk_gateway)
 
 
 if (WEB / "_next").is_dir():

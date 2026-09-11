@@ -95,7 +95,7 @@ PROVIDERS: tuple[ProviderDefinition, ...] = (
         credential_env=("TWELVE_DATA_API_KEY",),
         market_truth_authority="OPTIONAL_WITNESS",
         risk_eligible=False,
-        note="Optional REST/internal corroboration. Free WebSocket trial is not a production dependency.",
+        note="Optional internal corroboration. It is context-only unless TWELVE_DATA_RISK_ELIGIBLE is explicitly enabled after entitlement review.",
     ),
     ProviderDefinition(
         id="yahoo",
@@ -156,6 +156,11 @@ def provider_registry(snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
         row = asdict(definition)
         row["credential_env"] = list(definition.credential_env)
         configured = definition.configured()
+        risk_eligible = definition.risk_eligible
+        if definition.id == "twelve-data":
+            risk_eligible = configured and os.environ.get(
+                "TWELVE_DATA_RISK_ELIGIBLE", ""
+            ).strip().lower() in {"1", "true", "yes", "on"}
         observed = runtime.get(definition.id, {})
         observed_status = str(observed.get("status") or "").upper()
 
@@ -207,6 +212,7 @@ def provider_registry(snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
             status=status,
             health=health,
             observed=bool(observed),
+            risk_eligible=risk_eligible,
             runtime=runtime_fields,
         )
         items.append(row)

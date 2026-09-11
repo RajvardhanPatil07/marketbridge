@@ -11,7 +11,7 @@ MarketBridge v1 is **free-first** and conservative about what a provider is allo
 | Marketaux | financial news | none | context only |
 | SEC EDGAR | filings/company facts | none | official context only |
 | Nasdaq Symbol Directory | security master | none | symbol/reference metadata |
-| Twelve Data | optional equity cross-check | disabled as authoritative by default | optional/internal only |
+| Twelve Data | optional equity cross-check | context/internal by default | risk-eligible only with explicit `TWELVE_DATA_RISK_ELIGIBLE=1` after entitlement review |
 | Yahoo/yfinance | research fallback | none | disabled by default |
 | FRED | macro | none | optional context |
 | CoinGecko | crypto overview | none | optional display/context |

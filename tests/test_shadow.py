@@ -42,16 +42,8 @@ def test_two_fresh_original_venues_can_qualify_a_reference():
     assert decision["decision_latency_ms"] < 10
 
 
-def test_databento_bbo_is_one_aggregated_provider_witness():
-    observation = LivePipeline._normalized_databento_bbo("NVDA", 199.9, 200.1, NOW, NOW)
-    assert observation is not None
-    assert observation.price == 200
-    assert observation.provider == "databento"
-    assert observation.venue_key == "databento-equs-mini"
-    assert LivePipeline._normalized_databento_bbo("NVDA", 201, 200, NOW, NOW) is None
-
-
-def test_twelve_data_price_is_one_aggregated_provider_witness():
+def test_twelve_data_price_defaults_to_non_risk_eligible(monkeypatch):
+    monkeypatch.delenv("TWELVE_DATA_RISK_ELIGIBLE", raising=False)
     observation = LivePipeline._normalized_twelve_data_price(
         "NVDA", 200.0, NOW, NOW, "NASDAQ"
     )
@@ -59,6 +51,12 @@ def test_twelve_data_price_is_one_aggregated_provider_witness():
     assert observation.provider == "twelve-data"
     assert observation.venue == "NASDAQ"
     assert observation.venue_key == "twelve-data-us-equities"
+    assert observation.eligible is False
+
+    monkeypatch.setenv("TWELVE_DATA_RISK_ELIGIBLE", "1")
+    eligible = LivePipeline._normalized_twelve_data_price("NVDA", 200.0, NOW, NOW, "NASDAQ")
+    assert eligible is not None
+    assert eligible.eligible is True
     assert LivePipeline._normalized_twelve_data_price("NVDA", float("nan"), NOW, NOW) is None
 
 

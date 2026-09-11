@@ -116,7 +116,7 @@ Replay supports:
 
 ## War Room
 
-The judge-facing `/demo/` experience calls the v1 synthetic War Room API, which reuses the existing `RiskGateway` instead of implementing decision logic in JavaScript.
+The judge-facing `/demo/` experience calls the parameterized War Room API, which reuses the existing `RiskGateway` instead of implementing decision logic in JavaScript. `AUTO` uses a qualified live reference when the configured independent-provider quorum exists and otherwise falls back to an explicitly labelled synthetic fixture; `LIVE` refuses to manufacture a reference; `SYNTHETIC` forces the reproducible fixture.
 
 ```text
 NORMAL
@@ -136,7 +136,7 @@ RECOVERY_PENDING
 NORMAL
 ```
 
-The War Room is always labelled `SYNTHETIC_DEMO`; no live trade is submitted.
+The War Room reports `LIVE_DERIVED_DEMO` only when a qualified live quorum actually exists and `SYNTHETIC_DEMO` otherwise. No live trade is submitted.
 
 ## Deployment
 
@@ -148,4 +148,4 @@ Entrypoint:
 marketbridge.app:app
 ```
 
-`marketbridge.app` layers v1 routes onto the mature API without duplicating the existing safety implementation.
+`marketbridge.api` owns the canonical route registry. Free-first, proof, War Room, and judge routes are installed there before the static frontend catch-all; `marketbridge.app` is intentionally only a thin re-export of that canonical application.

@@ -24,7 +24,7 @@ def main() -> int:
         "notes": [
             "Alpaca IEX is the free equity stream and remains one market witness.",
             "Hyperliquid is venue context and never feeds the independent underlying reference.",
-            "Twelve Data is optional and is not required for the free-first demo.",
+            "Twelve Data is optional; it is risk-eligible only with TWELVE_DATA_RISK_ELIGIBLE=1 after entitlement review.",
             "News/SEC/macro data are context-only.",
         ],
     }

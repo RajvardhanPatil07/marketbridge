@@ -33,6 +33,7 @@ class LiveBaselineRequest(BaseModel):
     inject_attack: bool = False
     requested_notional_usd: Decimal = Field(default=Decimal("10000"), gt=0)
     requested_leverage: Decimal = Field(default=Decimal("10"), gt=0, le=100)
+    attack_bps: Decimal = Field(default=Decimal("350"), ge=0, le=Decimal("5000"))
 
 
 class SafeAlternativeRequest(BaseModel):
@@ -93,7 +94,8 @@ def install_judge_routes(app: FastAPI, pipeline, risk_gateway) -> None:
 
         reference_decimal = Decimal(str(reference))
         mark = (
-            reference_decimal * Decimal("1.03078")
+            reference_decimal
+            * (Decimal("1") + payload.attack_bps / Decimal("10000"))
             if payload.inject_attack
             else reference_decimal
         ).quantize(Decimal("0.000001"))
@@ -138,6 +140,7 @@ def install_judge_routes(app: FastAPI, pipeline, risk_gateway) -> None:
                 "confidence": market.get("confidence"),
             },
             "venue_mark": float(mark),
+            "attack_bps": float(payload.attack_bps) if payload.inject_attack else 0.0,
             "divergence_bps": market.get("divergence_bps"),
             "decision": result,
             "requested_notional": _money_context(payload.requested_notional_usd),
