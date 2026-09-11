@@ -214,7 +214,7 @@ MarketBridge is a hackathon/pilot advisory architecture, **not** a certified exc
 Repository attribution is intentionally limited to contributors visible in this project rather than claiming another hackathon team identity:
 
 - `@RajvardhanPatil07`
-- `@parthdongre`
+- `@ritz2607`
 
 Before final submission, ensure the official hackathon registration names exactly match the submission form. See [TEAM.md](./TEAM.md).
 
