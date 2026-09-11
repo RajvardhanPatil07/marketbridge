@@ -1269,7 +1269,7 @@ class LivePipeline:
                 backoff = min(15, backoff * 2)
 
     def _twelve_data_loop(self) -> None:
-        """Consume Twelve Data price ticks as one independent provider witness."""
+        """Consume Twelve Data ticks; context-only unless risk eligibility is explicitly opted in."""
         from websockets.sync.client import connect
 
         # Twelve Data requires the credential in its WebSocket URL. Never log the
