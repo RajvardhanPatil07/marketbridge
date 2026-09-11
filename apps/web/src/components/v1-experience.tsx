@@ -330,7 +330,7 @@ export function WarRoom() {
       <p>AUTO uses a genuinely qualified live reference when the provider quorum exists; otherwise it falls back to a clearly labelled synthetic fixture seeded from the current display price.</p>
       <button className="v1-primary" onClick={() => run("NORMAL")} disabled={busy}>Start demo</button>
     </section> : <>
-      <section className="provenance-strip">
+      <section className="war-provenance-strip">
         <div><span>DATA MODE</span><strong>{data.story.data_mode.replaceAll("_", " ")}</strong></div>
         <div><span>BASELINE SOURCE</span><strong>{data.story.baseline_source.replaceAll("_", " ")}</strong></div>
         <div><span>BASELINE</span><strong>{usd(data.story.baseline_price)}</strong></div>
