@@ -56,7 +56,20 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
     try {
       const response = await fetch(`${API_BASE}/v1/market/snapshots`, { headers: { Accept: "application/json" }, cache: "no-store" });
       if (!response.ok) return;
-      setDisplaySnapshots(((await response.json()) as DisplaySnapshotsResponse).items);
+      const incoming = ((await response.json()) as DisplaySnapshotsResponse).items;
+      setDisplaySnapshots((previous) => {
+        const combined = [...previous, ...incoming];
+        const bySymbol = new Map<string, DisplaySnapshot[]>();
+        for (const item of combined) {
+          const items = bySymbol.get(item.symbol) ?? [];
+          const duplicate = items.some((candidate) =>
+            candidate.event_time === item.event_time && candidate.price === item.price
+          );
+          if (!duplicate) items.push(item);
+          bySymbol.set(item.symbol, items.slice(-32));
+        }
+        return [...bySymbol.values()].flat();
+      });
     } catch { /* preserve the last verified display snapshot */ }
   }, [alpacaConfigured]);
 
